@@ -1,0 +1,19 @@
+{
+   "numberOfHumans" : 400,
+   "numberOfInfects" : 3,
+   "timeScale" : 55,
+   "probabilityOfSymptomatic" : 32,
+   "probabilityOfDeath" : 7,
+   "minDaysInfectious": 4,
+   "maxDaysInfectious": 15,
+   "minDaysRecovered": 10,
+   "maxDaysRecovered": 15,
+   "minDaysExposed": 2,
+   "maxDaysExposed": 11,
+   "map": "extralarge.tmx",
+   "lockdown": false,
+   "vaccinationPolicy": true,
+   "greenPass": false,
+   "lockGym": false,
+   "lockSchool": false
+}
