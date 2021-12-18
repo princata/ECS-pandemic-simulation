@@ -84,7 +84,7 @@ public class Counters : MonoBehaviour
         SecondDosesCounterText.text = "2nd Doses: " + Interlocked.Read(ref CounterSystem.secondDosesCounter); ;
         ThirdDosesCounterText.text = "3rd Doses: " + Interlocked.Read(ref CounterSystem.thirdDosesCounter); ;
         FourthDosesCounterText.text = "4th Doses: " + Interlocked.Read(ref CounterSystem.fourthDosesCounter); ;
-        TotalIntensiveCareCounterText.text = "Intensive Care available: " + Interlocked.Read(ref CounterSystem.totalIntensiveCounter); ;
+        TotalIntensiveCareCounterText.text = "Intensive Care available: " + Interlocked.Read(ref ContagionSystem.currentTotIntensive); ;
         IntensiveVAXCareCounterText.text = "in Intensive Care: " + Interlocked.Read(ref CounterSystem.intensiveVAXCounter); ;
         IntensiveNOVAXCareCounterText.text = "in Intensive Care: " + Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter); ;
 

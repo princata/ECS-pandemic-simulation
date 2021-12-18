@@ -7,6 +7,7 @@ using Unity.Transforms;
 using System;
 using UnityEngine;
 using System.Threading;
+using Unity.Collections.LowLevel.Unsafe;
 
 [UpdateAfter(typeof(QuadrantSystem))]
 //[UpdateAfter(typeof(PathFollowSystem))]
@@ -17,7 +18,10 @@ public class ContagionSystem : SystemBase
     public NativeMultiHashMap<int, QuadrantData> quadrantMultiHashMap2;
 
     private const float contagionThreshold = 20f; //20 minutes of close contact
-    
+    [ReadOnly]
+    public long startIntensive;
+
+    public static long currentTotIntensive;
 
     Configuration conf;
 
@@ -27,10 +31,12 @@ public class ContagionSystem : SystemBase
     {
         conf = Configuration.CreateFromJSON();
         quadrantMultiHashMap2 = QuadrantSystem.quadrantMultiHashMap;
-
     }
     protected override void OnStartRunning()
     {
+        startIntensive = Human.Instance.totalIntensiveCare;
+        currentTotIntensive = startIntensive;
+        Debug.Log($"{startIntensive}");
         
     }
 
@@ -38,10 +44,14 @@ public class ContagionSystem : SystemBase
     {
         var quadrantMultiHashMap = quadrantMultiHashMap2;
         var vaccinationPolicy = Human.Instance.vaccinationPolicy;
-        var totIntensive = Interlocked.Read(ref CounterSystem.totalIntensiveCounter);
+        var startIntensives = startIntensive;        
+        var randomArray = World.GetExistingSystem<RandomSystem>().RandomArray;
+
         float deltaTime = Time.DeltaTime;
 
-        var randomArray = World.GetExistingSystem<RandomSystem>().RandomArray;
+        NativeArray<long> localIntensiveCounter = new NativeArray<long>(1, Allocator.TempJob);
+        localIntensiveCounter[0] = 0;
+
         //job -> each element, if not infected, check if there are infected in its same quadrant
         var jobHandle = Entities.WithNativeDisableParallelForRestriction(randomArray).
             ForEach((Entity entity, int nativeThreadIndex, Translation t, ref QuadrantEntity qe, ref HumanComponent humanComponent, ref InfectionComponent ic) =>
@@ -123,7 +133,7 @@ public class ContagionSystem : SystemBase
                 }
             }
             //infection happened
-            if (ic.contagionCounter >= (contagionThreshold + 5 * humanComponent.vaccinations) && ic.status == Status.susceptible)
+            if (ic.contagionCounter >= (contagionThreshold) && ic.status == Status.susceptible)
             {
                 //human become infected
                 qe.typeEnum = QuadrantEntity.TypeEnum.exposed;
@@ -158,8 +168,16 @@ public class ContagionSystem : SystemBase
                     ic.infectiousCounter = 0;
                     if (ic.myRndValue > (100f - (ic.currentHumanDeathProbability - (ic.currentImmunityLevel * ic.currentHumanDeathProbability))))//IMPORTANTE! I PARAMETRI DI PERCENTUALE MORTE SONO SIMILI A QUELLI DI CRITICAL DISEASE DELL'ARTICOLO
                     {
-                        if (totIntensive > 0)
+                        
+                        if (currentTotIntensive <= startIntensives && currentTotIntensive > 0 )
+                        {
+                            Debug.Log($"new entity {entity.Index} in intensive care, available intensive: {currentTotIntensive}");
                             ic.intensiveCare = true;
+                            unsafe
+                            {
+                                Interlocked.Decrement(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]);
+                            }
+                        }
                         else
                             ic.criticalDisease = true;
                     }
@@ -188,6 +206,13 @@ public class ContagionSystem : SystemBase
                     ic.criticalDisease = false;
                     //ic.intensiveCare = false;
                     qe.typeEnum = QuadrantEntity.TypeEnum.removed;
+                    if (ic.intensiveCare)
+                    {
+                        unsafe
+                        {
+                            Interlocked.Increment(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]);
+                        }
+                    }
                 }
                 else
                 {
@@ -205,6 +230,14 @@ public class ContagionSystem : SystemBase
                         humanComponent.need4vax = 0f;
                     if (humanComponent.vaccinations < 1) //CASO PARTICOLARE: SE UN PROVAX VIENE CONTAGIATO PRIMA DI FARE LA PRIMA DOSE, IL FIRST DOSE TIME VIENE SETTATO DOPO 5 MESI DAL RECU
                         humanComponent.firstDoseTime = 150 * 25 * 60;
+                    }
+
+                    if (ic.intensiveCare)
+                    {
+                        unsafe
+                        {
+                            Interlocked.Increment(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]);
+                        }
                     }
 
                 }
@@ -243,13 +276,7 @@ public class ContagionSystem : SystemBase
                 }
                 else if (ic.criticalDisease)
                 {
-                    if(totIntensive > 0)
-                    {
-                        Debug.Log($"critical entity {entity.Index} passed to intensive care");
-                        
-                        ic.intensiveCare = true;
-                        ic.criticalDisease = false;
-                    }
+                    Debug.Log($"criticalDisease!");
                     if(ic.symptomatic && ic.currentHumanDeathProbability < 99.9f) //SE NON SI è IN TERAPIA INTENSIVA E SI HANNO SINTOMI, LE PROBABILITà DI MORIRE AUMENTANO LEGGERMENTE
                         ic.currentHumanDeathProbability += (0.1f* (int)humanComponent.age / 100f ) * deltaTime;
                 }
@@ -268,7 +295,12 @@ public class ContagionSystem : SystemBase
 
         jobHandle.Complete();
 
+        unsafe
+        {
+            Interlocked.Add(ref currentTotIntensive, Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
+        }
 
+        localIntensiveCounter.Dispose();
     }
 
 }

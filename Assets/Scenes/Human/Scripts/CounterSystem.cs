@@ -62,12 +62,14 @@ public class CounterSystem : SystemBase
 
     protected override void OnStartRunning()
     {
+        //totalIntensiveCounter = Human.Instance.totalIntensiveCare;
     }
     protected override void OnUpdate()
     {
         var ecb = m_EndSimulationEcbSystem.CreateCommandBuffer().ToConcurrent();
         var vaccinationPolicy = Human.Instance.vaccinationPolicy;
-        totalIntensiveCounter = Human.Instance.totalIntensiveCare;
+        //if(totalIntensiveCounter > Human.Instance.totalIntensiveCare)
+         //   totalIntensiveCounter = Human.Instance.totalIntensiveCare;
 
         NativeArray<long> localInfectedCounter = new NativeArray<long>(1, Allocator.TempJob);
         localInfectedCounter[0] = 0;
@@ -237,12 +239,15 @@ public class CounterSystem : SystemBase
                             Interlocked.Decrement(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]);
                         }
                         ic.intensiveCare = false;
-                        Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
+                       // Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
                     }
-                    else
+                    /*else
                     {
-                        Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} NO intensive care");
-                    }
+                        if(ic.criticalDisease)
+                            Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} but critical disease with {totalIntensiveCounter} available");
+                        else
+                            Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} without reason");
+                    }*/
                 }
                 else
                 {
@@ -259,12 +264,15 @@ public class CounterSystem : SystemBase
                             Interlocked.Decrement(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]);
                         }
                         ic.intensiveCare = false;
-                        Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
+                       // Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
                     }
-                    else
+                   /* else
                     {
-                        Debug.Log($"morto NOvax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} NO intensive care");
-                    }
+                        if (ic.criticalDisease)
+                            Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} but critical disease with {totalIntensiveCounter} available");
+                        else
+                            Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} without reason");
+                    }*/
                 }
                 //remove entity
                 /*
@@ -458,11 +466,13 @@ public class CounterSystem : SystemBase
             Interlocked.Add(ref fourthDosesCounter, Interlocked.Read(ref ((long*)localFourthDosesCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveVAXCounter, Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveNOVAXCounter, Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
-            Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
-            Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
+            // Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
+            //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
+            Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter);
+            Interlocked.Add(ref totalIntensiveCounter, Interlocked.Read(ref ContagionSystem.currentTotIntensive));
         }
 
-        
+
         //Human.Instance.totalIntensiveCare = totalIntensiveCounter;
 
         //Write some text to the test.txt file
