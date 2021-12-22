@@ -35,9 +35,7 @@ public class ContagionSystem : SystemBase
     protected override void OnStartRunning()
     {
         startIntensive = Human.Instance.totalIntensiveCare;
-        currentTotIntensive = startIntensive;
-        Debug.Log($"{startIntensive}");
-        
+        currentTotIntensive = startIntensive;      
     }
 
     protected override void OnUpdate()
@@ -171,12 +169,12 @@ public class ContagionSystem : SystemBase
                         
                         if (currentTotIntensive <= startIntensives && currentTotIntensive > 0 )
                         {
-                            Debug.Log($"new entity {entity.Index} in intensive care, available intensive: {currentTotIntensive}");
                             ic.intensiveCare = true;
                             unsafe
                             {
                                 Interlocked.Decrement(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]);
                             }
+                            
                         }
                         else
                             ic.criticalDisease = true;

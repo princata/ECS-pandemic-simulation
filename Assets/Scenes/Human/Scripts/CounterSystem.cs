@@ -56,6 +56,7 @@ public class CounterSystem : SystemBase
         firstDosesCounter = 0;
         intensiveNOVAXCounter = 0;
         intensiveVAXCounter = 0;
+        totalIntensiveCounter = 0;
         writer = new StreamWriter(logPath, false); // false is for overwrite existing file
         writer.WriteLine("Population\tExposed\tTotalExposed\tSymptomatic\tAsymptomatic\tDeath\tRecovered\tTotalRecovered\tMinutesPassed");
     }
@@ -125,6 +126,9 @@ public class CounterSystem : SystemBase
         NativeArray<long> localIntensiveCounter = new NativeArray<long>(1, Allocator.TempJob);
         localIntensiveCounter[0] = 0;
 
+        NativeArray<long> localTotalIntensiveCounter = new NativeArray<long>(1, Allocator.TempJob);
+        localTotalIntensiveCounter[0] = 0;
+
         var JobHandle1 = Entities.ForEach((Entity entity, int nativeThreadIndex, ref HumanComponent humanComponent, ref InfectionComponent ic) =>
         {
           
@@ -165,6 +169,7 @@ public class CounterSystem : SystemBase
                             unsafe
                             {
                                 Interlocked.Increment(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]);
+                                Interlocked.Increment(ref ((long*)localTotalIntensiveCounter.GetUnsafePtr())[0]);
                             }
                         }                     
 
@@ -180,6 +185,7 @@ public class CounterSystem : SystemBase
                             unsafe
                             {
                                 Interlocked.Increment(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]);
+                                Interlocked.Increment(ref ((long*)localTotalIntensiveCounter.GetUnsafePtr())[0]);
                             }
                         }
                     }
@@ -466,9 +472,8 @@ public class CounterSystem : SystemBase
             Interlocked.Add(ref fourthDosesCounter, Interlocked.Read(ref ((long*)localFourthDosesCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveVAXCounter, Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveNOVAXCounter, Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
-            // Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
+            //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
-            Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter);
             Interlocked.Add(ref totalIntensiveCounter, Interlocked.Read(ref ContagionSystem.currentTotIntensive));
         }
 

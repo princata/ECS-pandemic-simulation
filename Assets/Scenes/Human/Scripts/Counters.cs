@@ -89,4 +89,6 @@ public class Counters : MonoBehaviour
         IntensiveNOVAXCareCounterText.text = "in Intensive Care: " + Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter); ;
 
     }
+
 }
+
