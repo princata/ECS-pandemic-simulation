@@ -1,5 +1,6 @@
 {
-   "numberOfHumans" : 400,
+   "appendLog": true,
+   "numberOfHumans" : 10,
    "numberOfInfects" : 3,
    "timeScale" : 55,
    "probabilityOfSymptomatic" : 32,
@@ -10,7 +11,7 @@
    "maxDaysRecovered": 15,
    "minDaysExposed": 2,
    "maxDaysExposed": 11,
-   "map": "extralarge.tmx",
+   "map": "tiny.tmx",
    "lockdown": false,
    "vaccinationPolicy": true,
    "greenPass": false,

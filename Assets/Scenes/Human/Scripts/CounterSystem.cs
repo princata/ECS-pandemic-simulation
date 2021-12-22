@@ -35,6 +35,7 @@ public class CounterSystem : SystemBase
     public static long totalIntensiveCounter;
     public static long intensiveVAXCounter;
     public static long intensiveNOVAXCounter;
+    public static bool startAppend;
     private StreamWriter writer;
     public static string logPath = "statistics/log.txt";
 
@@ -57,8 +58,15 @@ public class CounterSystem : SystemBase
         intensiveNOVAXCounter = 0;
         intensiveVAXCounter = 0;
         totalIntensiveCounter = 0;
-        writer = new StreamWriter(logPath, false); // false is for overwrite existing file
-        writer.WriteLine("Population\tExposed\tTotalExposed\tSymptomatic\tAsymptomatic\tDeath\tRecovered\tTotalRecovered\tMinutesPassed");
+        writer = new StreamWriter(logPath, conf.appendLog); // false is for overwrite existing file, true to append
+        if (!conf.appendLog)
+        {
+            startAppend = true;
+            writer.WriteLine("Population\tExposed\tTotalExposed\tSymptomatic\tAsymptomatic\tDeath\tRecovered\tTotalRecovered\tMinutesPassed");
+        }
+        else
+            startAppend = false; //che diventa true appena faccio load
+        
     }
 
     protected override void OnStartRunning()
@@ -462,6 +470,7 @@ public class CounterSystem : SystemBase
             Interlocked.Add(ref asymptomaticVAXCounter, Interlocked.Read(ref ((long*)localAsymptomaticVAXCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref recoveredCounter, Interlocked.Read(ref ((long*)localRecoveredCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref recoveredVAXCounter, Interlocked.Read(ref ((long*)localRecoveredVAXCounter.GetUnsafePtr())[0]));
+            Interlocked.Add(ref totalRecoveredCounter, Interlocked.Read(ref ((long*)localTotalRecoveredCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref deathCounter, Interlocked.Read(ref ((long*)localDeathCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref deathVAXCounter, Interlocked.Read(ref ((long*)localDeathVAXCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref populationCounter, -Interlocked.Read(ref ((long*)localDeathCounter.GetUnsafePtr())[0]));
@@ -472,25 +481,34 @@ public class CounterSystem : SystemBase
             Interlocked.Add(ref fourthDosesCounter, Interlocked.Read(ref ((long*)localFourthDosesCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveVAXCounter, Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveNOVAXCounter, Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
+            Interlocked.Add(ref totalIntensiveCounter, Interlocked.Read(ref ((long*)localTotalIntensiveCounter.GetUnsafePtr())[0]));
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
-            Interlocked.Add(ref totalIntensiveCounter, Interlocked.Read(ref ContagionSystem.currentTotIntensive));
         }
-
 
         //Human.Instance.totalIntensiveCare = totalIntensiveCounter;
 
-        //Write some text to the test.txt file
-        writer.WriteLine(Interlocked.Read(ref populationCounter) + "\t"
-                            + Interlocked.Read(ref infectedCounter) + "\t"
-                            + Interlocked.Read(ref totalInfectedCounter) + "\t"
-                            + Interlocked.Read(ref symptomaticCounter) + "\t"
-                            + Interlocked.Read(ref asymptomaticCounter) + "\t"
-                            + Interlocked.Read(ref deathCounter) + "\t"
-                            + Interlocked.Read(ref recoveredCounter) + "\t"
-                            + Interlocked.Read(ref totalRecoveredCounter) + "\t"
-                            + (int)Datetime.total_minutes);
+        if (startAppend)
+        {
+            //Write some text to the test.txt file
+            writer.WriteLine(Interlocked.Read(ref populationCounter) + "\t"
+                                + Interlocked.Read(ref infectedCounter) + "\t"
+                                + Interlocked.Read(ref totalInfectedCounter) + "\t"
+                                + Interlocked.Read(ref symptomaticCounter) + "\t"
+                                + Interlocked.Read(ref asymptomaticCounter) + "\t"
+                                + Interlocked.Read(ref deathCounter) + "\t"
+                                + Interlocked.Read(ref recoveredCounter) + "\t"
+                                + Interlocked.Read(ref totalRecoveredCounter) + "\t"
+                                + (int)Datetime.total_minutes);
+        }
 
+        
+        
+        
+        
+        
+        
+        
         localInfectedCounter.Dispose();
         localInfectedVAXCounter.Dispose();
         localTotalInfectedCounter.Dispose();
@@ -509,6 +527,7 @@ public class CounterSystem : SystemBase
         localSymptomaticVAXCounter.Dispose();
         localIntensiveVAXCounter.Dispose();
         localIntensiveCounter.Dispose();
+        localTotalIntensiveCounter.Dispose();
     }
 
     protected override void OnDestroy()
@@ -516,5 +535,6 @@ public class CounterSystem : SystemBase
         base.OnDestroy();
         writer.Close();
     }
+
 }
 

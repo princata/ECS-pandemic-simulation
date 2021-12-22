@@ -43,10 +43,18 @@ public class SaveSystem : MonoBehaviour
         dataHold.Array = (Object[])sc;
         var data = JsonUtility.ToJson(dataHold);
         PlayerPrefs.SetString("Data", data);
-
+        CounterSystem.startAppend = false;
     }
     public void load()
     {
+        if (File.Exists(Application.dataPath + "/counterSave.txt"))
+        {
+            string json = File.ReadAllText(Application.dataPath + "/counterSave.txt");
+            SaveCounters counters = JsonUtility.FromJson<SaveCounters>(json);
+            LoadValues(counters);
+        }
+
+
         World.DefaultGameObjectInjectionWorld.EntityManager.DestroyEntity(World.DefaultGameObjectInjectionWorld.EntityManager.UniversalQuery);
         var data = PlayerPrefs.GetString("Data");
         dataHold = JsonUtility.FromJson<Data>(data);
@@ -63,7 +71,7 @@ public class SaveSystem : MonoBehaviour
         }
         world.EntityManager.EndExclusiveEntityTransaction();
         main.MoveEntitiesFrom(entityManager);
-
+        CounterSystem.startAppend = true;
         world.Dispose();
 
     }
@@ -91,7 +99,8 @@ public class SaveSystem : MonoBehaviour
             fourthDosesCounter = Interlocked.Read(ref CounterSystem.fourthDosesCounter),
             totalIntensiveCounter = Interlocked.Read(ref CounterSystem.totalIntensiveCounter),
             intensiveNOVAXCounter = Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter),
-            intensiveVAXCounter = Interlocked.Read(ref CounterSystem.intensiveVAXCounter)
+            intensiveVAXCounter = Interlocked.Read(ref CounterSystem.intensiveVAXCounter),
+            totalMinutes = Datetime.total_minutes            
         };
 
 
@@ -100,7 +109,31 @@ public class SaveSystem : MonoBehaviour
 
     public void LoadValues(SaveCounters obj)
     {
-
+        unsafe
+        {
+           
+            Interlocked.Exchange(ref CounterSystem.infectedCounter, obj.infectedCounter);
+            Interlocked.Exchange(ref CounterSystem.infectedVAXCounter, obj.infectedVAXCounter);
+            Interlocked.Exchange(ref CounterSystem.totalInfectedCounter, obj.totalInfectedCounter);
+            Interlocked.Exchange(ref CounterSystem.symptomaticCounter, obj.symptomaticCounter);
+            Interlocked.Exchange(ref CounterSystem.asymptomaticCounter, obj.asymptomaticCounter);
+            Interlocked.Exchange(ref CounterSystem.symptomaticVAXCounter, obj.symptomaticVAXCounter);
+            Interlocked.Exchange(ref CounterSystem.asymptomaticVAXCounter, obj.asymptomaticVAXCounter);
+            Interlocked.Exchange(ref CounterSystem.recoveredCounter, obj.recoveredCounter);
+            Interlocked.Exchange(ref CounterSystem.recoveredVAXCounter, obj.recoveredVAXCounter);
+            Interlocked.Exchange(ref CounterSystem.totalRecoveredCounter, obj.totalRecoveredCounter);
+            Interlocked.Exchange(ref CounterSystem.deathCounter, obj.deathCounter);
+            Interlocked.Exchange(ref CounterSystem.deathVAXCounter, obj.deathVAXCounter);
+            Interlocked.Exchange(ref CounterSystem.populationCounter, obj.populationCounter);
+            Interlocked.Exchange(ref CounterSystem.firstDosesCounter, obj.firstDosesCounter);
+            Interlocked.Exchange(ref CounterSystem.secondDosesCounter, obj.secondDosesCounter);
+            Interlocked.Exchange(ref CounterSystem.thirdDosesCounter, obj.thirdDosesCounter);
+            Interlocked.Exchange(ref CounterSystem.fourthDosesCounter, obj.fourthDosesCounter);
+            Interlocked.Exchange(ref CounterSystem.intensiveVAXCounter, obj.intensiveVAXCounter);
+            Interlocked.Exchange(ref CounterSystem.intensiveNOVAXCounter, obj.intensiveNOVAXCounter);
+            Interlocked.Exchange(ref CounterSystem.totalIntensiveCounter, obj.totalIntensiveCounter);
+        }
+        Datetime.total_minutes = obj.totalMinutes;
     }
 
 }
@@ -108,7 +141,6 @@ public class SaveSystem : MonoBehaviour
 public class Data
 {
     public Object[] Array;
-
 }
 
 public class SaveCounters
@@ -133,6 +165,7 @@ public class SaveCounters
     public long totalIntensiveCounter;
     public long intensiveVAXCounter;
     public long intensiveNOVAXCounter;
-
+    public float totalMinutes;
+    public bool startAppend;
 
 }

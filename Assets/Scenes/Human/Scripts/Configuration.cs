@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Configuration 
 {
+    public bool appendLog; //volontà di appendere le statistiche quindi intenzione di fare una load
     public int numberOfHumans;
     public int numberOfInfects;
     public float timeScale;
@@ -42,6 +43,7 @@ public class Configuration
     public bool GreenPass { get => greenPass; set => greenPass = value; }
     public bool LockGym { get => lockGym; set => lockGym = value; }
     public bool LockSchool { get => lockSchool; set => lockSchool = value; }
+    public bool AppendLog { get => appendLog; set => appendLog = value; }
 
     public static Configuration CreateFromJSON()
     {
