@@ -58,7 +58,6 @@ public class GetNeedPathSystem : SystemBase
         var lockGym = Human.conf.lockGym;
         var lockSchool = Human.conf.lockSchool;
         var lockPubs = Human.conf.lockPubs;
-        var greenPass = Human.conf.greenPass;
         var vaccinationPolicy = Human.conf.VaccinationPolicy;
 
         var randomArray = World.GetExistingSystem<RandomSystem>().RandomArray;

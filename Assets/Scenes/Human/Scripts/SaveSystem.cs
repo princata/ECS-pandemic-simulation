@@ -19,14 +19,14 @@ public class SaveSystem : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.K))
         {
-            save();
+            Save();
         }
         if (Input.GetKeyDown(KeyCode.L))
         {
-            load();
+            Load();
         }
     }
-    public void save()
+    public void Save()
     {
         SaveCounters counters = SaveValues();
         string json = JsonUtility.ToJson(counters);
@@ -43,9 +43,9 @@ public class SaveSystem : MonoBehaviour
         dataHold.Array = (Object[])sc;
         var data = JsonUtility.ToJson(dataHold);
         PlayerPrefs.SetString("Data", data);
-        CounterSystem.startAppend = false;
+        CounterSystem.startAppend = false; //questo parametro serve per scrivere nel file di statistiche, quando salvo vuol dire che voglio successivamente caricare quindi non scrivo le statistiche dal momento del salvataggio
     }
-    public void load()
+    public void Load()
     {
         if (File.Exists(Application.dataPath + "/counterSave.txt"))
         {
@@ -71,7 +71,7 @@ public class SaveSystem : MonoBehaviour
         }
         world.EntityManager.EndExclusiveEntityTransaction();
         main.MoveEntitiesFrom(entityManager);
-        CounterSystem.startAppend = true;
+        CounterSystem.startAppend = true; //rimetto a true così inizio a scrivere statistiche con le nuove disposizioni
         world.Dispose();
 
     }

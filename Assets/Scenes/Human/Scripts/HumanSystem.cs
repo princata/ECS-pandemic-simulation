@@ -48,7 +48,6 @@ public class HumanSystem : SystemBase
         var totalIntensive = Human.Instance.totalIntensiveCare;
         var lockGym = Human.conf.lockGym;
         var lockSchool = Human.conf.lockSchool;
-        var greenPass = Human.conf.greenPass;
 
         //----------------------------------INCREMENTO BISOGNI----------------------------------------
         JobHandle jobhandle = Entities.ForEach((ref HumanComponent hc, in InfectionComponent ic) =>
