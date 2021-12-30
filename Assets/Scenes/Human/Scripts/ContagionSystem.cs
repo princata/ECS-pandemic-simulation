@@ -17,7 +17,7 @@ public class ContagionSystem : SystemBase
     //copy of the grid, used to know where is each entity
     public NativeMultiHashMap<int, QuadrantData> quadrantMultiHashMap2;
 
-    private const float contagionThreshold = 20f; //20 minutes of close contact
+    private const float contagionThreshold = 18.5f; //20 minutes of close contact
     [ReadOnly]
     public long startIntensive;
 
@@ -85,13 +85,13 @@ public class ContagionSystem : SystemBase
                                     //se sono a casa e un infetto della mia famiglia è sintomatico e vicino a me allora mi contagio 18% + velocemente ACCORDING TO LUXEMBURG STUDY
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += 1.18f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
+                                        ic.contagionCounter += (0.5f + 0.18f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
                                       
                                     }
                                     
                                     else
                                     {
-                                        ic.contagionCounter += 1.05f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
+                                        ic.contagionCounter += (0.5f + 0.05f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
                                     }
                                 }
                                 else //NO HOUSEHOLD CONTACT
@@ -99,11 +99,11 @@ public class ContagionSystem : SystemBase
 
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += 1.12f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 12%
+                                        ic.contagionCounter += (0.5f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 12%
                                     }
                                     else
                                     {
-                                        ic.contagionCounter += 1.012f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 1.2%                                        
+                                        ic.contagionCounter += (0.5f + 0.012f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 1.2%                                        
                                     }
 
                                 }
@@ -112,11 +112,11 @@ public class ContagionSystem : SystemBase
                             //SE NON SONO A CASA
                             else if (quadrantData.symptomatic) //caso sintomatico
                             {
-                                ic.contagionCounter += 1.154f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 15.4%
+                                ic.contagionCounter += (0.5f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 15.4%
                             }
                             else if (!quadrantData.symptomatic)
                             {
-                                ic.contagionCounter += 1.022f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 2.2%
+                                ic.contagionCounter += (0.5f + 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 2.2%
                             }
 
                         }
@@ -193,11 +193,10 @@ public class ContagionSystem : SystemBase
             if (ic.infectiousCounter > ic.infectiousThreshold && ic.status == Status.infectious)
             {
                
-               // Debug.Log($"random dead{ic.myRndValue} of {entity.Index}");
-                if (ic.myRndValue > (100f - ic.currentHumanDeathProbability) && ic.symptomatic)
+                Debug.Log($"random dead{ic.myRndValue} with current computed: {ic.currentHumanDeathProbability - (ic.currentImmunityLevel * ic.currentHumanDeathProbability)}");
+                if (ic.myRndValue > (100f - (ic.currentHumanDeathProbability - (ic.currentImmunityLevel * ic.currentHumanDeathProbability))) && ic.symptomatic)
                 {
                     //remove entity
-
                     ic.status = Status.removed;
                     ic.oldstatus = Status.infectious;
                     ic.infected = false;
@@ -226,7 +225,7 @@ public class ContagionSystem : SystemBase
                     if(humanComponent.PROvax && vaccinationPolicy)
                     {
                         humanComponent.need4vax = 0f;
-                    if (humanComponent.vaccinations < 1) //CASO PARTICOLARE: SE UN PROVAX VIENE CONTAGIATO PRIMA DI FARE LA PRIMA DOSE, IL FIRST DOSE TIME VIENE SETTATO DOPO 5 MESI DAL RECU
+                    if (humanComponent.vaccinations < 1) //CASO PARTICOLARE: SE UN PROVAX VIENE CONTAGIATO PRIMA DI FARE LA PRIMA DOSE, IL FIRST DOSE TIME VIENE SETTATO DOPO 5 MESI DAL RECUPERO
                         humanComponent.firstDoseTime = 150 * 25 * 60;
                     }
 
@@ -274,7 +273,6 @@ public class ContagionSystem : SystemBase
                 }
                 else if (ic.criticalDisease)
                 {
-                    Debug.Log($"criticalDisease!");
                     if(ic.symptomatic && ic.currentHumanDeathProbability < 99.9f) //SE NON SI è IN TERAPIA INTENSIVA E SI HANNO SINTOMI, LE PROBABILITà DI MORIRE AUMENTANO LEGGERMENTE
                         ic.currentHumanDeathProbability += (0.1f* (int)humanComponent.age / 100f ) * deltaTime;
                 }

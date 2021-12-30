@@ -24,8 +24,7 @@ public class CounterSystem : SystemBase
     public static long asymptomaticCounter;
     public static long symptomaticVAXCounter;
     public static long asymptomaticVAXCounter;
-
-
+    //CONTATORI PER ETA' DI STATO INFECTIOUS
     public static long totInfectedRetired;
     public static long totInfectedWorker;
     public static long totInfectedStudent;
@@ -36,6 +35,7 @@ public class CounterSystem : SystemBase
 
     public static long deathCounter;
     public static long deathVAXCounter;
+    //CONTATORI PER ETA' DI STATO DEATH
     public static long totDeathRetired;
     public static long totDeathWorker;
     public static long totDeathStudent;
@@ -45,10 +45,11 @@ public class CounterSystem : SystemBase
     public static long secondDosesCounter;
     public static long thirdDosesCounter;
     public static long fourthDosesCounter;
+
     public static long totalIntensiveCounter;
     public static long intensiveVAXCounter;
     public static long intensiveNOVAXCounter;
-
+    //CONTATORI PER ETA' DI STATO INTENSIVE CARE
     public static long totIntensiveRetired;
     public static long totIntensiveWorker;
     public static long totIntensiveStudent;
@@ -93,8 +94,9 @@ public class CounterSystem : SystemBase
         if (!conf.appendLog)
         {
             startAppend = true;
-            writer.WriteLine("ChangePolicies\tPopulation\tExposed\tExposedVAX\tTotalExposed\tSymptomatic\tSymptomaticVAX\tAsymptomatic\tAsymptomaticVAX\ttotInfectedRetired\ttotInfectedWorker\ttotInfectedStudent\tDeath\tDeathVAX\ttotDeathRetired\ttotDeathWorker\ttotDeathStudent\tRecovered\tRecoveredVAX\tTotalRecovered\t" +
-                "IntensiveCare\tIntensiveCareVAX\tTotalIntensive\ttotIntensiveRetired\ttotIntensiveRetired\ttotIntensiveRetired\tFirstDoses\tSecondDoses\tThirdDoses\tFourthDoses\tMinutesPassed");
+            writer.WriteLine("ChangePolicies\tPopulation\tExposed\tExposedVAX\tTotalExposed\tSymptomatic\tSymptomaticVAX\tAsymptomatic\tAsymptomaticVAX\t" +
+                "TotInfectedRetired\tTotInfectedWorker\tTotInfectedStudent\tDeath\tDeathVAX\tTotDeathRetired\tTotDeathWorker\tTotDeathStudent\tRecovered\tRecoveredVAX\tTotalRecovered\t" +
+                "IntensiveCare\tIntensiveCareVAX\tTotalIntensive\tTotIntensiveRetired\tTotIntensiveWorker\tTotIntensiveStudent\tFirstDoses\tSecondDoses\tThirdDoses\tFourthDoses\tMinutesPassed");
         }
         else
             startAppend = false; //che diventa true appena faccio load
@@ -386,13 +388,7 @@ public class CounterSystem : SystemBase
                         ic.intensiveCare = false;
                        // Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
                     }
-                    /*else
-                    {
-                        if(ic.criticalDisease)
-                            Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} but critical disease with {totalIntensiveCounter} available");
-                        else
-                            Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} without reason");
-                    }*/
+                    
                 }
                 else
                 {
@@ -411,13 +407,6 @@ public class CounterSystem : SystemBase
                         ic.intensiveCare = false;
                        // Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
                     }
-                   /* else
-                    {
-                        if (ic.criticalDisease)
-                            Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} but critical disease with {totalIntensiveCounter} available");
-                        else
-                            Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} without reason");
-                    }*/
                 }
                 //remove entity
                 /*
@@ -553,7 +542,7 @@ public class CounterSystem : SystemBase
             }
 
             //---------INSERIMENTO COUNTERS VACCINI------------
-            if (vaccinationPolicy && humanComponent.PROvax && ic.doses < 2)
+            if (vaccinationPolicy && humanComponent.PROvax && ic.doses < 4)
             {
                 if (humanComponent.vaccinations == 1 && ic.doses == 0)
                 {
@@ -676,10 +665,10 @@ public class CounterSystem : SystemBase
                                 + Interlocked.Read(ref totalRecoveredCounter) + "\t"
                                 + Interlocked.Read(ref intensiveNOVAXCounter) + "\t"
                                 + Interlocked.Read(ref intensiveVAXCounter) + "\t"
+                                + Interlocked.Read(ref totalIntensiveCounter) + "\t"
                                 + Interlocked.Read(ref totIntensiveRetired) + "\t"
                                 + Interlocked.Read(ref totIntensiveWorker) + "\t"
                                 + Interlocked.Read(ref totIntensiveStudent) + "\t"
-                                + Interlocked.Read(ref totalIntensiveCounter) + "\t"
                                 + Interlocked.Read(ref firstDosesCounter) + "\t"
                                 + Interlocked.Read(ref secondDosesCounter) + "\t"
                                 + Interlocked.Read(ref thirdDosesCounter) + "\t"

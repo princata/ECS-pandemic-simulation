@@ -77,27 +77,27 @@ public class HumanSystem : SystemBase
                     if (ic.currentImmunityLevel > 0.01f)
                         hc.immunityTime = math.min(hc.immunityTime + 1f * deltaTime, 120 * 25 * 60); //contatore di immunità
 
-                //-------BISOGNI INFLUENZATI DA LOCKDOWN-----------
-                if (!lockdown)
-                {
-                    hc.sociality = math.min(hc.sociality + 1f * deltaTime, 22 * 60); //Human does 3 hours of sociality each day, OGNI 22 ORE SI SOCIALIZZA
-                    hc.sportivity = math.min(hc.sportivity + 1f * deltaTime, 2 * 23 * 60); //Human does 1.5 hours of sport every two days
-                    hc.grocery = math.min(hc.grocery + 1f * deltaTime, 3 * 25 * 60);//Human goes to the supermarket for one hour once every 3 days                    
-                }
-                else
-                {
-                    hc.grocery = math.min(hc.grocery + 0.5f * deltaTime, 3 * 25 * 60);
-                    hc.sociality = math.min(hc.sociality + (1 - hc.socialResposibility) * 1f * deltaTime, 23 * 60); //PERCHE' 0.1f*deltTime???
-                    hc.sportivity = math.min(hc.sportivity + (1 - hc.socialResposibility) * 1f * deltaTime, 2 * 23 * 60);
-                }
+                    //-------BISOGNI INFLUENZATI DA LOCKDOWN-----------
+                    if (!lockdown)
+                    {
+                        hc.sociality = math.min(hc.sociality + 1f * deltaTime, 22 * 60); //Human does 3 hours of sociality each day, OGNI 22 ORE SI SOCIALIZZA
+                        hc.sportivity = math.min(hc.sportivity + 1f * deltaTime, 2 * 23 * 60); //Human does 1.5 hours of sport every two days
+                        hc.grocery = math.min(hc.grocery + 1f * deltaTime, 3 * 25 * 60);//Human goes to the supermarket for one hour once every 3 days                    
+                    }
+                    else
+                    {
+                        hc.grocery = math.min(hc.grocery + 0.5f * deltaTime, 3 * 25 * 60);
+                        hc.sociality = math.min(hc.sociality + (1 - hc.socialResposibility) * 0.5f * deltaTime, 23 * 60); //PERCHE' 0.1f*deltTime???                   
+                        hc.sportivity = math.min(hc.sportivity + (1 - hc.socialResposibility) * 1f * deltaTime, 2 * 23 * 60);
+                    }
                     
                     //------PROCEDIMENTO INCREMENTO CICLO VACCINALE--------------
-                    if (hc.PROvax && vaccinationPolicy && ic.status != Status.recovered && ic.currentImmunityLevel < 0.4f)
+                    if (hc.PROvax && vaccinationPolicy )
                     {                      
-                        if (hc.vaccinations == 0 && ic.status == Status.susceptible)
+                        if (hc.vaccinations == 0 && ic.status == Status.susceptible && ic.currentImmunityLevel < 0.41f)
                             hc.need4vax = math.min(hc.need4vax + 1f * deltaTime, hc.firstDoseTime + 60f);
-                        else if (hc.vaccinations > 0 && ic.status == Status.susceptible)
-                            hc.need4vax = math.min(hc.need4vax + 1f * deltaTime, 150 * 25 * 60);                       
+                        else if (hc.vaccinations > 0 && ic.status == Status.susceptible && ic.currentImmunityLevel < 0.41f)
+                            hc.need4vax = math.min(hc.need4vax + 1f * deltaTime, (150 * 25 * 60) - hc.immunityTime); //le dosi successive si fanno dopo 5 mesi ma tenendo in considerazione il tempo di immunità                      
                     }
                 }           
         }).ScheduleParallel(Dependency);
@@ -212,7 +212,7 @@ public class HumanSystem : SystemBase
             if (hc.PROvax && vaccinationPolicy && !ic.intensiveCare && ic.status != Status.recovered)
             {
                   
-                if (hc.vaccinations == 0 && hc.need4vax > hc.firstDoseTime && ic.currentImmunityLevel < 0.4f)
+                if (hc.vaccinations == 0 && hc.need4vax > hc.firstDoseTime - hc.immunityTime && ic.currentImmunityLevel < 0.41f)
                 {
                     ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                     {
@@ -224,9 +224,9 @@ public class HumanSystem : SystemBase
                     });
                     hc.vaccinations++;
                     ic.currentImmunityLevel = 0.9f;
-
+                    hc.immunityTime = 0f;
                 }
-                else if (hc.vaccinations > 0 && hc.need4vax > 150 * 24 * 60 && ic.currentImmunityLevel < 0.4f) //5 mesi
+                else if (hc.vaccinations > 0 && hc.need4vax > (150 * 23 * 60) - hc.immunityTime && ic.currentImmunityLevel < 0.41f) //5 mesi
                 {
                     ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                     {
@@ -241,11 +241,11 @@ public class HumanSystem : SystemBase
                     hc.immunityTime = 0f;
                 }
                 
-                if(hc.immunityTime > 120 * 24* 60 && ic.currentImmunityLevel > 0.4f)
-                {
-                    ic.currentImmunityLevel = 0.39f; //dati presi da articolo tgcom protezione vaccini
-                    hc.immunityTime = 0f;
-                }
+            }
+            if(hc.immunityTime > 120 * 24* 60 && ic.currentImmunityLevel > 0.4f)
+            {
+                ic.currentImmunityLevel = 0.39f; //dati presi da articolo tgcom protezione vaccini
+                
             }
 
         }).ScheduleParallel(jobhandle);
@@ -397,7 +397,7 @@ public class HumanSystem : SystemBase
                 }               
             }
 
-            if(ic.currentImmunityLevel < 0.4f)
+            if(ic.currentImmunityLevel < 0.41f)
             {
                 ic.currentImmunityLevel = Math.Max(0.01f , ic.currentImmunityLevel - (1f - hc.socialResposibility) * deltaTime); //perdere l'immunità nel tempo
             }
