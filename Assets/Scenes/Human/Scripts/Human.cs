@@ -5,6 +5,16 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
+using System;
+
+public struct TemplateInfo
+{
+    public int template1Total;
+    public int template2Total;
+    public int template3Total;
+    public int template4Total;
+    public int template5Total;
+}
 
 public class Human : MonoBehaviour
 {
@@ -13,8 +23,14 @@ public class Human : MonoBehaviour
     public static Configuration conf;
     public bool vaccinationPolicy;
     public int intensiveCarePercent;
+    public int template1Percent;
+    public int template2Percent;
+    public int template3Percent;
+    public int template4Percent;
+    public int template5Percent;
     public long totalIntensiveCare;
     private static FamilyGenerator famGenerator;
+    private static TemplateInfo templateInfo;
 
     [SerializeField] public Mesh mesh;
     [SerializeField] public Material healthyMaterial;
@@ -63,6 +79,9 @@ public class Human : MonoBehaviour
 
         //initialize family generator
         famGenerator = new FamilyGenerator();
+
+        templateInfo = FillTemplateData(conf.numberOfHumans);
+
         // Get houses and offices from grid
         List<Vector2Int> housesList = new List<Vector2Int>();
         List<Vector2Int> officesList = new List<Vector2Int>();
@@ -94,6 +113,7 @@ public class Human : MonoBehaviour
         NativeArray<Vector2Int> schools = schoolsList.ToNativeArray<Vector2Int>(Allocator.Temp);
         NativeArray<Vector2Int> OAhouses = OAhomeList.ToNativeArray<Vector2Int>(Allocator.Temp);
         famGenerator.SetHouses(houses, OAhouses);
+        famGenerator.SetTemplateInfo(templateInfo);
         float symptomsProbability = 0f;
         float humanDeathProbability = 0f;
         float socialResponsability = 0f;
@@ -325,6 +345,8 @@ public class Human : MonoBehaviour
                 pathIndex = -1
             });
         }
+       // famGenerator.PrintTemplateDebug();
+        
         offices.Dispose();
         schools.Dispose();
         entityArray.Dispose();
@@ -355,5 +377,23 @@ public class Human : MonoBehaviour
     public float Percent(float total, int percent)
     {
         return (total * percent) / 100;
-    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+    }
+    
+    public TemplateInfo FillTemplateData(int totalPopulation)
+    {
+       
+        TemplateInfo t = new TemplateInfo();
+        float d = (totalPopulation / 4f) * (template1Percent / 100f);
+        t.template1Total = (int)Math.Ceiling(d);
+        d = (totalPopulation / 5f) * (template2Percent / 100f);
+        t.template2Total = (int)Math.Ceiling(d);
+        d = (totalPopulation / 3f) * (template3Percent / 100f);
+        t.template3Total = (int)Math.Ceiling(d);
+        d = (totalPopulation / 2f) * (template4Percent / 100f);
+        t.template4Total = (int)Math.Ceiling(d);
+        d = (totalPopulation / 2f) * (template5Percent / 100f);
+        t.template5Total = (int)Math.Ceiling(d);
+
+        return t;
+    }
 }

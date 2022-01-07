@@ -1307,6 +1307,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vaccinationPolicy: 0
   intensiveCarePercent: 1
+  template1Percent: 30
+  template2Percent: 20
+  template3Percent: 20
+  template4Percent: 15
+  template5Percent: 15
   totalIntensiveCare: 0
   mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   healthyMaterial: {fileID: 2100000, guid: 000be1e6ffb23984fb6888e9f7c35c60, type: 2}

@@ -19,7 +19,7 @@ public class FamilyGenerator
     public static int workerCounter = 0;
     public static int retiredCounter = 0;
     public static Vector2Int lastHomePosition;
-
+    public static TemplateInfo templateInfos;
     public static NativeArray<Vector2Int> houses;
     public static NativeArray<Vector2Int> OAhouses;
 
@@ -29,6 +29,19 @@ public class FamilyGenerator
         OAhouses = OAhome;
     }
 
+    public void SetTemplateInfo(TemplateInfo t)
+    {
+        templateInfos = t;
+    }
+
+    public void PrintTemplateDebug()
+    {
+        Debug.Log(templateInfos.template1Total);
+        Debug.Log(templateInfos.template2Total);
+        Debug.Log(templateInfos.template3Total);
+        Debug.Log(templateInfos.template4Total);
+        Debug.Log(templateInfos.template5Total);
+    }
 
     public FamilyInfo GetFamilyAndAgeDetail()
     {
@@ -41,6 +54,33 @@ public class FamilyGenerator
             else
                 lastHomePosition = houses[UnityEngine.Random.Range(0, houses.Length)];
         }
+
+        if(templateInfos.template1Total > 0)
+        {
+            templateCounter = 0;
+            templateInfos.template1Total--;
+        }
+        else if (templateInfos.template2Total > 0)
+        {
+            templateCounter = 1;
+            templateInfos.template2Total--;
+        }
+        else if (templateInfos.template3Total > 0)
+        {
+            templateCounter = 2;
+            templateInfos.template3Total--;
+        }
+        else if (templateInfos.template4Total > 0)
+        {
+            templateCounter = 3;
+            templateInfos.template4Total--;
+        }
+        else if (templateInfos.template5Total > 0)
+        {
+            templateCounter = 4;
+            templateInfos.template5Total--;
+        }
+
 
         switch (templateCounter)
         {
@@ -66,7 +106,7 @@ public class FamilyGenerator
                 }
                 if (studentCounter >= 2 && workerCounter >= 2)
                 {
-                    templateCounter++;
+                   // templateCounter++;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
@@ -108,7 +148,7 @@ public class FamilyGenerator
 
                 if (studentCounter >= 1 && workerCounter >= 2 && retiredCounter >= 2)
                 {
-                    templateCounter++;
+                    //templateCounter++;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
@@ -131,7 +171,7 @@ public class FamilyGenerator
                 }
                 if (studentCounter >= 3)
                 {
-                    templateCounter++;
+                   // templateCounter++;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
@@ -154,7 +194,7 @@ public class FamilyGenerator
                 }
                 if (workerCounter >= 2)
                 {
-                    templateCounter++;
+                   // templateCounter++;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
@@ -177,7 +217,7 @@ public class FamilyGenerator
                 }
                 if (retiredCounter >= 2)
                 {
-                    templateCounter = 0; //ciclo ricomincia
+                   // templateCounter = 0; //ciclo ricomincia
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
