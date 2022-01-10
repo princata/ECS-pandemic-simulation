@@ -114,6 +114,7 @@ public class Human : MonoBehaviour
         NativeArray<Vector2Int> OAhouses = OAhomeList.ToNativeArray<Vector2Int>(Allocator.Temp);
         famGenerator.SetHouses(houses, OAhouses);
         famGenerator.SetTemplateInfo(templateInfo);
+        //famGenerator.PrintTemplateDebug();
         float symptomsProbability = 0f;
         float humanDeathProbability = 0f;
         float socialResponsability = 0f;
