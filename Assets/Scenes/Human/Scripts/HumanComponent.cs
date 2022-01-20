@@ -18,14 +18,13 @@ public struct HumanComponent : IComponentData
     public float socialResposibility;
     public float jobEssentiality;
     //home
-    public Vector2Int homePosition;
-    public Vector2Int officePosition;
+    public Vector3Int homePosition;
+    public Vector3Int officePosition;
     //characteristics
     public HumanStatus age;
     public bool PROvax;
     public int vaccinations;
     //family
     public int familyKey;
-    public int numberOfMembers;
 
 }

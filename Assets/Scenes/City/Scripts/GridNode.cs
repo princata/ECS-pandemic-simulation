@@ -9,21 +9,24 @@ public class GridNode
     private int y;
 
     private bool isWalkable;
-
-    private TileMapSprite tileType;
-
-    public GridNode(TileMapSprite tileType, Grid<GridNode> grid, int x, int y)
+    //mettere una label di presenza di Z layer
+    private int tiles;//possibilità di inserire un array di tile
+    private int firstfloor;
+    public GridNode(int tile, Grid<GridNode> grid, int x, int y)
     {
         this.grid = grid;
-        this.tileType = tileType;
+        this.tiles = tile;
         this.x = x;
         this.y = y;
-        if (tileType == TileMapSprite.RoadCrossing ||
-            tileType == TileMapSprite.RoadVertical ||
-            tileType == TileMapSprite.RoadHorizontal ||
-            tileType == TileMapSprite.Park)
+        this.firstfloor = int.Parse(tile.ToString("X")[0].ToString(), System.Globalization.NumberStyles.HexNumber);
+
+        if (this.firstfloor == (int)TileMapSprite.RoadCrossing ||
+            this.firstfloor == (int)TileMapSprite.RoadVertical ||
+            this.firstfloor == (int)TileMapSprite.RoadHorizontal ||
+            this.firstfloor == (int)TileMapSprite.Park)
             isWalkable = true;
         else isWalkable = false;
+        
     }
 
     public bool IsWalkable()
@@ -37,9 +40,14 @@ public class GridNode
         grid.TriggerGridObjectChanged(x, y);
     }
 
-    public TileMapSprite GetTileType()
+    public int GetTiles()
     {
-        return tileType;
+        return tiles;
+    }
+
+    public int GetFirstFloors()
+    {
+        return firstfloor;
     }
 
 }

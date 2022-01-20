@@ -38,7 +38,7 @@ public class Human : MonoBehaviour
 
     [SerializeField] public Material humanSpriteMaterial;
 
-    public NativeArray<Vector2Int> houses;
+    public NativeArray<Vector3Int> houses;
 
     private void Awake()
     {
@@ -48,7 +48,7 @@ public class Human : MonoBehaviour
     private void Start()
     {
         float mean, sigma;
-
+        
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
         //Archetype (same set of component types) so Unity makes sure they are packed nice and tight in memory for an efficient fetch from the CPU.
         EntityArchetype entityArchetype = entityManager.CreateArchetype(
@@ -58,7 +58,8 @@ public class Human : MonoBehaviour
             typeof(PathFollow),
             typeof(QuadrantEntity),
             typeof(SpriteSheetAnimation_Data),
-            typeof(InfectionComponent)
+            typeof(InfectionComponent),
+            typeof(TileComponent)
         );
 
         //Extract configuration from json file
@@ -83,35 +84,43 @@ public class Human : MonoBehaviour
         templateInfo = FillTemplateData(conf.numberOfHumans);
 
         // Get houses and offices from grid
-        List<Vector2Int> housesList = new List<Vector2Int>();
-        List<Vector2Int> officesList = new List<Vector2Int>();
-        List<Vector2Int> schoolsList = new List<Vector2Int>();
-        List<Vector2Int> OAhomeList = new List<Vector2Int>();
-        var mapGrid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType(); });
+        List<Vector3Int> housesList = new List<Vector3Int>();
+        List<Vector3Int> officesList = new List<Vector3Int>();
+        List<Vector3Int> schoolsList = new List<Vector3Int>();
+        List<Vector3Int> OAhomeList = new List<Vector3Int>();
+        // var mapGrid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType(); });
+        var mapGrid = Testing.Instance.grid;
+        
         for (int i = 0; i < gridWidth; i++)
         {
-            for (int j = 0; j < gridHeight; j++)
+            for (int j = 0; j < gridHeight; j++)//Inserire controllo piani
             {
-                if (mapGrid[i + j * gridWidth] == TileMapEnum.TileMapSprite.Home || mapGrid[i + j * gridWidth] == TileMapEnum.TileMapSprite.Home2)
+                int f = 0;
+                string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); //conversione numero in hex
+                foreach (var floor in tiles) //analisi di ogni char rappresentante un piano
                 {
-                    housesList.Add(new Vector2Int(i, j));
+                   
+                    if (int.Parse(floor.ToString(),System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Home)
+                    {
+                        housesList.Add(new Vector3Int(i, j, f++));
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Office)
+                    {
+                        officesList.Add(new Vector3Int(i, j, f++));
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.School)
+                    {
+                        schoolsList.Add(new Vector3Int(i, j,f++));
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.OAhome)
+                        OAhomeList.Add(new Vector3Int(i, j, f++));
                 }
-                else if (mapGrid[i + j * gridWidth] == TileMapEnum.TileMapSprite.Office)
-                {
-                    officesList.Add(new Vector2Int(i, j));
-                }
-                else if (mapGrid[i + j * gridWidth] == TileMapEnum.TileMapSprite.School)
-                {
-                    schoolsList.Add(new Vector2Int(i, j));
-                }
-                else if (mapGrid[i + j* gridWidth] == TileMapEnum.TileMapSprite.OAhome)
-                    OAhomeList.Add(new Vector2Int(i, j));
             }
         }
-        houses = housesList.ToNativeArray<Vector2Int>(Allocator.Persistent);
-        NativeArray<Vector2Int> offices = officesList.ToNativeArray<Vector2Int>(Allocator.Temp);
-        NativeArray<Vector2Int> schools = schoolsList.ToNativeArray<Vector2Int>(Allocator.Temp);
-        NativeArray<Vector2Int> OAhouses = OAhomeList.ToNativeArray<Vector2Int>(Allocator.Temp);
+        houses = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);
+        NativeArray<Vector3Int> offices = officesList.ToNativeArray<Vector3Int>(Allocator.Temp);
+        NativeArray<Vector3Int> schools = schoolsList.ToNativeArray<Vector3Int>(Allocator.Temp);
+        NativeArray<Vector3Int> OAhouses = OAhomeList.ToNativeArray<Vector3Int>(Allocator.Temp);
         famGenerator.SetHouses(houses, OAhouses);
         famGenerator.SetTemplateInfo(templateInfo);
         //famGenerator.PrintTemplateDebug();
@@ -128,7 +137,7 @@ public class Human : MonoBehaviour
             FamilyInfo familyInfo = famGenerator.GetFamilyAndAgeDetail();
             HumanStatus age = familyInfo.age;
             var homePosition = familyInfo.homePosition;
-            var officePosition = Vector2Int.zero;
+            var officePosition = Vector3Int.zero;
 
             if (conf.Lockdown)
                 socialResponsability = GenerateNormalRandom(0.75f, 0.05f, 0.50f, 0.99f);
@@ -145,7 +154,8 @@ public class Human : MonoBehaviour
 
             if (age == HumanStatus.Student) // 5-30 age
             {
-                officePosition = schools[UnityEngine.Random.Range(0, schools.Length)];
+                UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
+                officePosition = (Vector3Int)schools[UnityEngine.Random.Range(0, schools.Length)];
                 symptomsProbability = GenerateNormalRandom(0.2f, 0.1f, 0f, 1f) * 100; //20% sintomi
                 humanDeathProbability = GenerateNormalRandom(0.01f, 0.1f, 0.01f, 1f) * 100; //1% IFR (INFECTION FATALITY RATE)
                 if (vaccinationPolicy && PROvax)
@@ -156,6 +166,7 @@ public class Human : MonoBehaviour
             }
             else if (age == HumanStatus.Worker) //30-60 age
             {
+                UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
                 officePosition = offices[UnityEngine.Random.Range(0, offices.Length)];
                 symptomsProbability = GenerateNormalRandom(0.30f, 0.1f, 0.25f, 1f) * 100; //30% sintomi
                 humanDeathProbability = GenerateNormalRandom(0.03f, 0.1f, 0.01f, 1f) * 100; //3% IFR (INFECTION FATALITY RATE)
@@ -176,11 +187,21 @@ public class Human : MonoBehaviour
             }
 
             //Vector3 position = new float3((UnityEngine.Random.Range(0, gridWidth)) * 10f + UnityEngine.Random.Range(0, 10f), (UnityEngine.Random.Range(0, gridHeight)) * 10f + UnityEngine.Random.Range(0, 10f), 0);
-            Vector3 position = new float3(homePosition.x * 10f + UnityEngine.Random.Range(0, 10f), homePosition.y * 10f + UnityEngine.Random.Range(0, 10f), 0);
+
+            //Vector3 position = new float3(homePosition.x * 10f + UnityEngine.Random.Range(0, 10f), homePosition.y * 10f + UnityEngine.Random.Range(0, 10f), 0);
+
+            Vector3 position = new float3(homePosition.x *10f , homePosition.y * 10f, 0);
+
+            entityManager.SetComponentData(entity, new TileComponent 
+            {
+                currentTile = TileMapEnum.TileMapSprite.Home,
+                currentFloor = homePosition.z
+            });
+           
 
             //To add a buffer to an entity, you can use the normal methods of adding a component type onto an entity:
             entityManager.AddBuffer<PathPosition>(entity);
-
+            UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
             //human component
             entityManager.SetComponentData(entity, new HumanComponent
             {
@@ -194,8 +215,7 @@ public class Human : MonoBehaviour
                 homePosition = homePosition,
                 officePosition = officePosition,
                 age = familyInfo.age,
-                familyKey = familyInfo.familyKey,
-                numberOfMembers = familyInfo.numberOfMembers, //numero membri della famiglia             
+                familyKey = familyInfo.familyKey,           
                 PROvax = PROvax,
                 need4vax = 0f,
                 firstDoseTime = firstDoseTime,
@@ -259,6 +279,7 @@ public class Human : MonoBehaviour
 
             if (numberOfInfects > 0)
             {
+                
                 numberOfInfects--;
 
                 //l'età influenza la probabilità di presentare sintomi
@@ -341,6 +362,7 @@ public class Human : MonoBehaviour
                 Value = position
             });
 
+
             entityManager.SetComponentData(entity, new PathFollow
             {
                 pathIndex = -1
@@ -351,13 +373,14 @@ public class Human : MonoBehaviour
         offices.Dispose();
         schools.Dispose();
         entityArray.Dispose();
-        mapGrid.Dispose();
+        
 
     }
 
     public static float GenerateNormalRandom(float mean, float sigma, float min, float max)
     {
         //calcolo di una variabile aleatoria e distribuita gaussianamente con media e varianza usando la trasformazione di Box-Muller
+       
         float rand1 = UnityEngine.Random.Range(0.0f, 1.0f);
         float rand2 = UnityEngine.Random.Range(0.0f, 1.0f);
 

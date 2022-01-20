@@ -34,7 +34,7 @@ public class Grid<TGridObject>
     private TGridObject[,] gridArray;
 
     //constructor with generics
-    public Grid(int width, int height, float cellSize, Vector3 originPosition, int[,] array2Dmap, Func<TileMapSprite, Grid<TGridObject>, int, int, TGridObject> createGridObject)
+    public Grid(int width, int height, float cellSize, Vector3 originPosition, string[,] array2Dmap, Func<int, Grid<TGridObject>, int, int, TGridObject> createGridObject) //qui posso modificare il costruttore del gridobject
     {
         this.width = width;
         this.height = height;
@@ -48,7 +48,19 @@ public class Grid<TGridObject>
         {
             for (int y = 0; y < height; y++)
             {
-                gridArray[x, y] = createGridObject((TileMapSprite)array2Dmap[y, x], this, x, y);
+                var floors = array2Dmap[y, x].Split(' ');
+                string tms = "";
+                int i = 0;
+                foreach(var floor in floors)
+                {
+                   
+                   if(i < 8) //Massimo 8 piani perchè al massimo posso rappresentare 8 char(tile) da 4 bit su un int32
+                    tms += int.Parse(floor).ToString("X"); //conversione del singolo elemento anche solo di un piano a int per poi portarlo all'hex
+                    i++;
+                }
+                Debug.Log(tms);
+                gridArray[x, y] = createGridObject(int.Parse(tms, System.Globalization.NumberStyles.HexNumber), this, x, y); //inserito nella griglia numero int da decodificare
+                
             }
         }
 
@@ -152,14 +164,15 @@ public class Grid<TGridObject>
 
     //create a NativeArray of grid elements, so that we can deal with it in our entities/jobs
     //way to have a copy without passing the object
-    public NativeArray<TileMapSprite> GetGridByValue(Func<TGridObject, TileMapSprite> convert)
+    public NativeArray<int> GetGridByValue(Func<TGridObject, int> convert)//probabilmente bisogna inserire nativemultihashmap
     {
-        NativeArray<TileMapSprite> grid = new NativeArray<TileMapSprite>(GetWidth() * GetHeight(), Allocator.Persistent);
+        NativeArray<int> grid = new NativeArray<int>(GetWidth() * GetHeight(), Allocator.Persistent);
         for (int i = 0; i < GetWidth(); i++)
         {
             for (int j = 0; j < GetHeight(); j++)
             {
                 grid[i + j * GetWidth()] = convert(gridArray[i, j]);
+               
             }
         }
         return grid;

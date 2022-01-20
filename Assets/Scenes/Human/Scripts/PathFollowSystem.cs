@@ -23,6 +23,7 @@ public class PathFollowSystem : SystemBase
         {
             if (pathFollow.pathIndex >= 0)
             {
+                
                 // Has path to follow
                 PathPosition pathPosition = pathPositionBuffer[pathFollow.pathIndex];
 

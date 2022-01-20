@@ -17,7 +17,7 @@ public class ContagionSystem : SystemBase
     //copy of the grid, used to know where is each entity
     public NativeMultiHashMap<int, QuadrantData> quadrantMultiHashMap2;
 
-    private const float contagionThreshold = 18.5f; //20 minutes of close contact
+    private const float contagionThreshold = 20f; //20 minutes of close contact
     [ReadOnly]
     public long startIntensive;
 
@@ -52,7 +52,7 @@ public class ContagionSystem : SystemBase
 
         //job -> each element, if not infected, check if there are infected in its same quadrant
         var jobHandle = Entities.WithNativeDisableParallelForRestriction(randomArray).
-            ForEach((Entity entity, int nativeThreadIndex, Translation t, ref QuadrantEntity qe, ref HumanComponent humanComponent, ref InfectionComponent ic) =>
+            ForEach((Entity entity, int nativeThreadIndex, Translation t, ref QuadrantEntity qe, ref HumanComponent humanComponent, ref InfectionComponent ic, in TileComponent tc) =>
         {
             
             
@@ -73,52 +73,71 @@ public class ContagionSystem : SystemBase
                         //Debug.Log(quadrantData.position);                       
                         if (math.distance(t.Value, quadrantData.position) < 2f)
                         {
-                            float3 home = new float3(humanComponent.homePosition.x * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.homePosition.y * quadrantCellSize + quadrantCellSize * 0.5f, 0);
+                            float3 myHome = new float3(humanComponent.homePosition.x * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.homePosition.y * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.homePosition.z);
+                            float3 myOffice = new float3(humanComponent.officePosition.x * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.officePosition.y * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.officePosition.z);
                             //TODO consider also social resp other human involved
                             //increment infectionCounter if one/more infected are in close positions (infected at quadrantData.position) 
                             //infection counter is determined by time and human responsibility
 
-                            if (math.distance(t.Value, home) < 2f) //quindi siamo nelle vicinanze di casa con i condimini o familiari  
+                            if (math.distance(t.Value, myHome) < 2f) //quindi siamo nelle vicinanze di casa con i condimini o familiari  
                             {
-                                if (quadrantData.familyKey == humanComponent.familyKey) //HOUSEHOLD CONTACT
+                                if (quadrantData.familyKey == humanComponent.familyKey && tc.currentFloor == quadrantData.currentFloor) //HOUSEHOLD CONTACT e ovviamente nello stesso piano z , CASO PLUS: visita agli amici oltre ad household
                                 {
+                                    Debug.Log($"Household transmission at {tc.currentFloor}th floor");
                                     //se sono a casa e un infetto della mia famiglia è sintomatico e vicino a me allora mi contagio 18% + velocemente ACCORDING TO LUXEMBURG STUDY
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += (0.5f + 0.18f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
-                                      
+                                        ic.contagionCounter += (0.25f + 0.18f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
+
                                     }
-                                    
+
                                     else
                                     {
-                                        ic.contagionCounter += (0.5f + 0.05f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
+                                        ic.contagionCounter += (0.25f + 0.05f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
                                     }
                                 }
-                                else //NO HOUSEHOLD CONTACT
+                                else if (quadrantData.familyKey != humanComponent.familyKey && tc.currentFloor == quadrantData.currentFloor)//NO HOUSEHOLD CONTACT
                                 { // se invece è un condomino che incontro in "ascensore" o scale o vicino di casa che viene a casa mia
 
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += (0.5f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 12%
+                                        ic.contagionCounter += (0.25f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 12%
                                     }
                                     else
                                     {
-                                        ic.contagionCounter += (0.5f + 0.012f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 1.2%                                        
+                                        ic.contagionCounter += (0.25f + 0.012f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 1.2%                                        
                                     }
 
                                 }
-
-                            }
-                            //SE NON SONO A CASA
-                            else if (quadrantData.symptomatic) //caso sintomatico
-                            {
-                                ic.contagionCounter += (0.5f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 15.4%
-                            }
-                            else if (!quadrantData.symptomatic)
-                            {
-                                ic.contagionCounter += (0.5f + 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 2.2%
                             }
 
+                            else if (math.distance(t.Value, myOffice) < 2f) //quindi siamo nel mio ufficio con qualcuno infetto nel mio stesso piano  
+                            {
+                                if (tc.currentFloor == quadrantData.currentFloor) //WORKPLACE CONTACT e ovviamente nello stesso piano z 
+                                {
+                                    Debug.Log($"workplace transmission at {tc.currentFloor}th floor");
+                                    if (quadrantData.symptomatic)
+                                    {
+                                        ic.contagionCounter += ( 0.25f + 0.15f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
+
+                                    }
+
+                                    else
+                                    {
+                                        ic.contagionCounter += ( 0.25f + 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
+                                    }
+                                }
+
+                            }
+                            //SE NON SONO A CASA e siamo sullo stesso piano
+                            else if (quadrantData.symptomatic && tc.currentFloor == quadrantData.currentFloor) //caso sintomatico
+                            {
+                                ic.contagionCounter += (0.25f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 15.4%
+                            }
+                            else if (!quadrantData.symptomatic && tc.currentFloor == quadrantData.currentFloor)
+                            {
+                                ic.contagionCounter += (0.25f + 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 2.2%
+                            }
                         }
                         //TODO we could add a cap here to speed up the check
                     } while (quadrantMultiHashMap.TryGetNextValue(out quadrantData, ref nativeMultiHashMapIterator));

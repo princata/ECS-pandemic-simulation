@@ -13,14 +13,14 @@ public class GetNeedPathSystem : SystemBase
     private float CellSize;
     private int Width;
     private int Height;
-    private NativeArray<TileMapEnum.TileMapSprite> Grid;
+    private NativeArray<int> Grid;
 
     private NativeArray<int2> directions;
     private NativeArray<int2> start_offset;
     //private Unity.Mathematics.Random rnd;
 
     private EndSimulationEntityCommandBufferSystem ecbSystem;
-    private NativeArray<Vector2Int> myHouses;
+    private NativeArray<Vector3Int> myHouses;
 
     protected override void OnCreate()
     {
@@ -32,7 +32,7 @@ public class GetNeedPathSystem : SystemBase
         CellSize = Testing.Instance.grid.GetCellSize();
         Width = Testing.Instance.grid.GetWidth();
         Height = Testing.Instance.grid.GetHeight();
-        Grid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType(); });
+        Grid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTiles(); });
         directions = new NativeArray<int2>(4, Allocator.Persistent);
         directions.CopyFrom(new int2[] { new int2(1, 0), new int2(0, -1), new int2(-1, 0), new int2(0, 1) });
         start_offset = new NativeArray<int2>(4, Allocator.Persistent);
@@ -67,7 +67,7 @@ public class GetNeedPathSystem : SystemBase
         //Marking components as read - only helps the job scheduler execute your jobs more efficiently.
 
         JobHandle jobHandle = Entities.WithNativeDisableParallelForRestriction(randomArray).
-            ForEach((Entity entity, int nativeThreadIndex, ref NeedPathParams needPathParams, in Translation translation, in NeedComponent needComponent, in HumanComponent humanComponent) =>
+            ForEach((Entity entity, int nativeThreadIndex, ref NeedPathParams needPathParams, ref HumanComponent humanComponent, ref TileComponent tileComponent, in Translation translation, in NeedComponent needComponent) =>
         {
 
             GetXY(translation.Value, Vector3.zero, cellSize, out int startX, out int startY);
@@ -92,6 +92,10 @@ public class GetNeedPathSystem : SystemBase
                     {
                         result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                         result[0] = TileMapEnum.TileMapSprite.Pub;
+
+                        //tileComponent.currentTile = TileMapEnum.TileMapSprite.Pub;
+                        //tileComponent.currentFloor = 0;
+                        
                     }
                     else
                     {
@@ -100,11 +104,17 @@ public class GetNeedPathSystem : SystemBase
                         found = true;
                         endX = humanComponent.homePosition.x;
                         endY = humanComponent.homePosition.y;
+
+                        tileComponent.currentTile = TileMapEnum.TileMapSprite.Home;
+                        tileComponent.currentFloor = humanComponent.homePosition.z;
+                       
                     }
                     break;
                 case NeedType.needForGrocery:
                     result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                     result[0] = TileMapEnum.TileMapSprite.Supermarket;
+                    //tileComponent.currentTile = TileMapEnum.TileMapSprite.Supermarket;
+                    //tileComponent.currentFloor = 0;
                     break;
                 case NeedType.needForSociality:
                     if ((random.NextDouble() < 0.20 && !lockdown) || (random.NextDouble() < 0.5 * (1 - humanComponent.socialResposibility) && lockdown))
@@ -118,32 +128,49 @@ public class GetNeedPathSystem : SystemBase
                         } while (houses[friendIndex].x == humanComponent.homePosition.x || houses[friendIndex].y == humanComponent.homePosition.y); //cerco una casa di una persona fin quando non è vicino casa mia
                         endX = houses[friendIndex].x;
                         endY = houses[friendIndex].y;
+                        tileComponent.currentTile = TileMapEnum.TileMapSprite.Home;
+                        tileComponent.currentFloor = houses[friendIndex].z;
                     }
                     else if (!lockdown && !lockPubs)
                     {
                         result = new NativeArray<TileMapEnum.TileMapSprite>(2, Allocator.Temp);
                         result[0] = TileMapEnum.TileMapSprite.Pub;
                         result[1] = TileMapEnum.TileMapSprite.Park;
+                        //tileComponent.currentTile = TileMapEnum.TileMapSprite.Pub;
+                        //tileComponent.currentFloor = 0;
+
                     }
                     else 
                     {
                         result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                         result[0] = TileMapEnum.TileMapSprite.Park;
+                        //tileComponent.currentTile = TileMapEnum.TileMapSprite.Park;
+                        //tileComponent.currentFloor = 0;
+
                     }
 
                     break;
                 case NeedType.needForSport:
                     result = new NativeArray<TileMapEnum.TileMapSprite>(2, Allocator.Temp);
-                    result[0] = TileMapEnum.TileMapSprite.Park;
-                    if (!lockdown && humanComponent.age != HumanStatusEnum.HumanStatus.Retired &&!lockGym)
-                        result[1] = TileMapEnum.TileMapSprite.Gym;
-                    
+                    if (!lockdown && humanComponent.age != HumanStatusEnum.HumanStatus.Retired && !lockGym)
+                    {
+                        result[0] = TileMapEnum.TileMapSprite.Gym;
+                        result[1] = TileMapEnum.TileMapSprite.Park;
+                    }
+                    else
+                        result[0] = TileMapEnum.TileMapSprite.Park;
+
+                    //tileComponent.currentTile = TileMapEnum.TileMapSprite.Park; //anche se in realtà è gym
+                    //tileComponent.currentFloor = 0;
+
                     break;
                 case NeedType.needToRest:
                     result = new NativeArray<TileMapEnum.TileMapSprite>(0, Allocator.Temp);
                     found = true;
                     endX = humanComponent.homePosition.x;
                     endY = humanComponent.homePosition.y;
+                    tileComponent.currentTile = TileMapEnum.TileMapSprite.Home;
+                    tileComponent.currentFloor = humanComponent.homePosition.z;
                     break;
                 case NeedType.needToWork:
                     result = new NativeArray<TileMapEnum.TileMapSprite>(0, Allocator.Temp);
@@ -153,12 +180,24 @@ public class GetNeedPathSystem : SystemBase
                     {
                         endX = humanComponent.officePosition.x;
                         endY = humanComponent.officePosition.y;
+                        if(humanComponent.age == HumanStatusEnum.HumanStatus.Worker)
+                        {
+                            tileComponent.currentTile = TileMapEnum.TileMapSprite.Office;
+                            tileComponent.currentFloor = humanComponent.officePosition.z;
+                        }
+                        else if(humanComponent.age == HumanStatusEnum.HumanStatus.Student)
+                        {
+                            tileComponent.currentTile = TileMapEnum.TileMapSprite.School;
+                            tileComponent.currentFloor = 0;
+                        }
 
                     }
                     else //IMPLEMENTATA LA DAD PER STUDENTI E LO SMART WORKING
                     {
                         endX = humanComponent.homePosition.x;
                         endY = humanComponent.homePosition.y;
+                        tileComponent.currentTile = TileMapEnum.TileMapSprite.Home;
+                        tileComponent.currentFloor = humanComponent.homePosition.z;
                     }
                     break;
                 case NeedType.needForVax:
@@ -166,12 +205,16 @@ public class GetNeedPathSystem : SystemBase
                     {
                         result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                         result[0] = TileMapEnum.TileMapSprite.Hospital;
+                        //tileComponent.currentTile = TileMapEnum.TileMapSprite.Hospital;
+                        //tileComponent.currentFloor = 0;
                     }
                     break;
 
                 case NeedType.needToHeal:
                     result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                     result[0] = TileMapEnum.TileMapSprite.Hospital;
+                    //tileComponent.currentTile = TileMapEnum.TileMapSprite.Hospital;
+                    //tileComponent.currentFloor = 0;
 
                     break;
 
@@ -179,11 +222,19 @@ public class GetNeedPathSystem : SystemBase
 
             for (int l = 0; l < result.Length && !found; l++)
             {
-                if (result[l] == grid[startX + startY * width])
+                string temp = grid[startX + startY * width].ToString("X"); //cerco nei piani superiori
+                for(int k = 0; k < temp.Length && !found; k++)
                 {
-                    endX = startX;
-                    endY = startY;
-                    found = true;
+                    TileMapEnum.TileMapSprite tile = (TileMapEnum.TileMapSprite)int.Parse(temp[k].ToString(), System.Globalization.NumberStyles.HexNumber);
+                    if (result[l] == tile)
+                    {
+                        endX = startX;
+                        endY = startY;
+                        found = true;
+                    }
+                    tileComponent.currentTile = tile;
+                    tileComponent.currentFloor = k;
+
                 }
             }
 
@@ -205,12 +256,23 @@ public class GetNeedPathSystem : SystemBase
                         j += directions[edge].y;
                         if (i >= 0 && i < width && j >= 0 && j < height)
                             for (int l = 0; l < result.Length && !found; l++)
-                                if (result[l] == grid[i + j * width])
+                            {
+                                string temp = grid[i + j * width].ToString("X"); //cerco nei piani superiori
+                                for (int k = 0; k < temp.Length && !found; k++)
                                 {
-                                    endX = i;
-                                    endY = j;
-                                    found = true;
+                                    TileMapEnum.TileMapSprite tile = (TileMapEnum.TileMapSprite)int.Parse(temp[k].ToString(), System.Globalization.NumberStyles.HexNumber);
+                                    if (result[l] == tile)
+                                    {
+                                        endX = i;
+                                        endY = j;
+                                        found = true;
+                                    }
+                                    tileComponent.currentTile = tile;
+                                    tileComponent.currentFloor = k;
+
                                 }
+
+                            }
                     }
                     pos_step = 0;
                 }

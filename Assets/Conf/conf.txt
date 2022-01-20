@@ -1,6 +1,6 @@
 {
-   "appendLog": true,
-   "numberOfHumans" : 400,
+   "appendLog": false,
+   "numberOfHumans" : 15,
    "numberOfInfects" : 4,
    "timeScale" : 50,
    "minDaysInfectious": 4,
@@ -8,11 +8,11 @@
    "minDaysRecovered": 10,
    "maxDaysRecovered": 15,
    "minDaysExposed": 2,
-   "maxDaysExposed": 11,
-   "map": "extralarge.tmx",
+   "maxDaysExposed": 9,
+   "map": "tiny.tmx",
    "lockdown": false,
    "vaccinationPolicy": true,
    "lockGym": false,
-   "lockSchool": true,
+   "lockSchool": false,
    "lockPubs" : false
 }

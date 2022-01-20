@@ -35,6 +35,7 @@ public struct QuadrantData
 {
     public Entity entity;
     public float3 position;
+    public int currentFloor;
     public QuadrantEntity quadrantEntity;
     public int familyKey;
     public bool symptomatic;
@@ -110,17 +111,18 @@ public class QuadrantSystem : SystemBase
 
         NativeMultiHashMap<int, QuadrantData>.ParallelWriter quadrantMultiHashMap2 = quadrantMultiHashMap.AsParallelWriter(); //TODO smells
         //non tutte le entità scrivono in parallelo su questa hash map il loro value che è quadrant data(con info su posizione di cella e stato infettivo)
-        Entities.ForEach((Entity entity, Translation t, ref QuadrantEntity qe, ref HumanComponent humanComponent, in InfectionComponent ic) =>
+        Entities.ForEach((Entity entity, Translation t, ref QuadrantEntity qe, ref HumanComponent humanComponent, in InfectionComponent ic, in TileComponent tileComponent) =>
         {
             if (ic.infected && !ic.intensiveCare) //entita in terapia intensiva non possono contagiare!
             {   //INFECTEEEEEEEEED SOLO GLI INFETTI SI ISCRIVONO ALLA TABELLA
                 int hashMapKey = GetPositionHashMapKey(t.Value);
-                float3 home = new float3(humanComponent.homePosition.x * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.homePosition.y * quadrantCellSize + quadrantCellSize * 0.5f, 0);
+                float3 home = new float3(humanComponent.homePosition.x * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.homePosition.y * quadrantCellSize + quadrantCellSize * 0.5f, humanComponent.homePosition.z);
                 //Debug.Log(hashMapKey);
                 quadrantMultiHashMap2.Add(hashMapKey, new QuadrantData
                 {
                     entity = entity,
                     position = t.Value,
+                    currentFloor = tileComponent.currentFloor,
                     quadrantEntity = qe,
                     familyKey = humanComponent.familyKey,
                     symptomatic = ic.symptomatic

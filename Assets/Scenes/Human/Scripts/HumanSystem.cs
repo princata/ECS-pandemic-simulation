@@ -13,8 +13,8 @@ public class HumanSystem : SystemBase
 {
     private EndSimulationEntityCommandBufferSystem ecbSystem;
 
-    [ReadOnly]
-    private NativeArray<TileMapEnum.TileMapSprite> Grid;
+   // [ReadOnly]
+    //private NativeArray<TileMapEnum.TileMapSprite> Grid;
     [ReadOnly]
     private float CellSize;
     [ReadOnly]
@@ -28,7 +28,7 @@ public class HumanSystem : SystemBase
 
     protected override void OnStartRunning()
     {
-        Grid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType(); });
+       // Grid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType()[0]; });
         CellSize = Testing.Instance.grid.GetCellSize();
         Width = Testing.Instance.grid.GetWidth();
     }
@@ -41,7 +41,7 @@ public class HumanSystem : SystemBase
         float deltaTime = Time.DeltaTime;
         var width = Width;
         var cellSize = CellSize;
-        var grid = Grid;
+        //var grid = Grid;
 
         var lockdown = Human.conf.Lockdown;
         var vaccinationPolicy = Human.conf.VaccinationPolicy;
@@ -256,7 +256,7 @@ public class HumanSystem : SystemBase
 
         //-----------------------DECREMENTO BISOGNI--------------------------
         //manage satisfied needs, when value for a parameter decreases under 25% as threshold 
-        JobHandle jobhandle2 = Entities.ForEach((Entity entity, int nativeThreadIndex, ref HumanComponent hc, ref InfectionComponent ic, in Translation t, in NeedComponent needComponent) =>
+        JobHandle jobhandle2 = Entities.ForEach((Entity entity, int nativeThreadIndex, ref HumanComponent hc, ref InfectionComponent ic, in Translation t, in NeedComponent needComponent, in TileComponent tileComponent, in PathFollow pathFollow) =>
         {
             //retrieve entity position
             GetXY(t.Value, Vector3.zero, cellSize, out int currentX, out int currentY); //TODO fix hardcoded origin
@@ -266,134 +266,169 @@ public class HumanSystem : SystemBase
             //park -> decrement sociality and sportivity
             //pub -> decrement hunger and sociality
             //road -> decrement sportivity
-
-            //process of decrementation based on Location!
-            switch (grid[currentX + currentY * width])
+            if(pathFollow.pathIndex < 0)
             {
-                case TileMapEnum.TileMapSprite.Home:
-                    if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
-                    {
-                        if (needComponent.currentNeed == NeedType.needToRest)
-                            hc.fatigue = Math.Max(0, hc.fatigue - (2f + 1f) * deltaTime); //fatica viene decrementata di 3 minuti(in game) ogni secondo
-                        else if (needComponent.currentNeed == NeedType.needForFood)
-                            hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime); //la fame viene decrementata di 7 minuti(in game) ogni secondo
-                        if(needComponent.currentNeed == NeedType.needToWork)     
-                            hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime); //Decremento bisogno di smart working                      
-                    }
-                    else
-                        hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
-                    break;
-                case TileMapEnum.TileMapSprite.Home2:
-                    if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
-                    {
-                        if (needComponent.currentNeed == NeedType.needToRest)
-                            hc.fatigue = Math.Max(0, hc.fatigue - (2f + 1f) * deltaTime); //fatica viene decrementata di 3 minuti(in game) ogni secondo
-                        else if (needComponent.currentNeed == NeedType.needForFood)
-                            hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime); //la fame viene decrementata di 7 minuti(in game) ogni secondo
 
-                        if (needComponent.currentNeed == NeedType.needToWork)
+                //process of decrementation based on Location!
+                switch (tileComponent.currentTile)
+                {
+                    case TileMapEnum.TileMapSprite.Home:
+                        if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
                         {
-                            if ((hc.age == HumanStatusEnum.HumanStatus.Student && lockdown) || (hc.age == HumanStatusEnum.HumanStatus.Student && lockSchool))
-                                hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime); //se ce lockdown o lockdown solo per scuole allora lavoro da casa
-                            if (hc.age == HumanStatusEnum.HumanStatus.Worker && lockdown && hc.jobEssentiality < 0.5f)
-                                hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
+                            if (needComponent.currentNeed == NeedType.needToRest)
+                                hc.fatigue = Math.Max(0, hc.fatigue - (2f + 1f) * deltaTime); //fatica viene decrementata di 3 minuti(in game) ogni secondo
+                            else if (needComponent.currentNeed == NeedType.needForFood)
+                                hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime); //la fame viene decrementata di 7 minuti(in game) ogni secondo
+                            if (needComponent.currentNeed == NeedType.needToWork)
+                            {
+                                if ((hc.age == HumanStatusEnum.HumanStatus.Student && lockdown) || (hc.age == HumanStatusEnum.HumanStatus.Student && lockSchool))
+                                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime); //se ce lockdown o lockdown solo per scuole allora lavoro da casa
+                                if (hc.age == HumanStatusEnum.HumanStatus.Worker && lockdown && hc.jobEssentiality < 0.5f)
+                                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
+                            }
                         }
-                    }
-                    else
-                        hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
-                    break;
+                        else
+                            hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
+                        break;
+                   /* case TileMapEnum.TileMapSprite.Home2:
+                        if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
+                        {
+                            if (needComponent.currentNeed == NeedType.needToRest)
+                                hc.fatigue = Math.Max(0, hc.fatigue - (2f + 1f) * deltaTime); //fatica viene decrementata di 3 minuti(in game) ogni secondo
+                            else if (needComponent.currentNeed == NeedType.needForFood)
+                                hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime); //la fame viene decrementata di 7 minuti(in game) ogni secondo
 
-                case TileMapEnum.TileMapSprite.Park:
-                    if (needComponent.currentNeed == NeedType.needForSport)//la sport viene decrementato di 30 minuti ogni secondo
-                        hc.sportivity = Math.Max(0, hc.sportivity - (30f + 1f) * deltaTime);
-                    else if (needComponent.currentNeed == NeedType.needForSociality)
-                        hc.sociality = Math.Max(0, hc.sociality - (15f + 1f) * deltaTime); //la socialità viene decrementata di 15 minuti(in game) ogni secondo al parco
-                    break;
+                            if (needComponent.currentNeed == NeedType.needToWork)
+                            {
+                                if ((hc.age == HumanStatusEnum.HumanStatus.Student && lockdown) || (hc.age == HumanStatusEnum.HumanStatus.Student && lockSchool))
+                                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime); //se ce lockdown o lockdown solo per scuole allora lavoro da casa
+                                if (hc.age == HumanStatusEnum.HumanStatus.Worker && lockdown && hc.jobEssentiality < 0.5f)
+                                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
+                            }
+                        }
+                        else
+                            hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
+                        break;*/
 
-                case TileMapEnum.TileMapSprite.Pub:
-                    if (needComponent.currentNeed == NeedType.needForFood)
-                        hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime);//la fame viene decrementata di 7 minuti(in game) ogni secondo
-                    else if (needComponent.currentNeed == NeedType.needForSociality)
-                        hc.sociality = Math.Max(0, hc.sociality - (15f + 1f) * deltaTime);//la socialità viene decrementata di 15 minuti(in game) ogni secondo al pub
-                    break;
+                    case TileMapEnum.TileMapSprite.Park:
+                        if (needComponent.currentNeed == NeedType.needForSport)//la sport viene decrementato di 30 minuti ogni secondo
+                            hc.sportivity = Math.Max(0, hc.sportivity - (30f + 1f) * deltaTime);
+                        else if (needComponent.currentNeed == NeedType.needForSociality)
+                            hc.sociality = Math.Max(0, hc.sociality - (15f + 1f) * deltaTime); //la socialità viene decrementata di 15 minuti(in game) ogni secondo al parco
+                        break;
 
-                case TileMapEnum.TileMapSprite.Supermarket:
-                    hc.grocery = Math.Max(0, hc.grocery - (3 * 24f + 1f) * deltaTime);//andare al supermercato viene decrementato di 3*24 minuti ogni secondo così
-                                                                                      //appena passano 60 secondi (1h in game) il bisogno è stato soddisfatto
-                    break;
+                    case TileMapEnum.TileMapSprite.Pub:
+                        if (needComponent.currentNeed == NeedType.needForFood)
+                            hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime);//la fame viene decrementata di 7 minuti(in game) ogni secondo
+                        else if (needComponent.currentNeed == NeedType.needForSociality)
+                            hc.sociality = Math.Max(0, hc.sociality - (15f + 1f) * deltaTime);//la socialità viene decrementata di 15 minuti(in game) ogni secondo al pub
+                        break;
 
-                case TileMapEnum.TileMapSprite.Office:
-                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
-                    break;
+                    case TileMapEnum.TileMapSprite.Supermarket:
+                        hc.grocery = Math.Max(0, hc.grocery - (3 * 24f + 1f) * deltaTime);//andare al supermercato viene decrementato di 3*24 minuti ogni secondo così
+                                                                                          //appena passano 60 secondi (1h in game) il bisogno è stato soddisfatto
+                        break;
 
-                case TileMapEnum.TileMapSprite.School:
-                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
-                    break;
+                    case TileMapEnum.TileMapSprite.Office:
+                        hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
+                        break;
 
-                case TileMapEnum.TileMapSprite.Gym:
-                    if (needComponent.currentNeed == NeedType.needForSport)//la sport viene decrementato di 30 minuti ogni secondo
-                        hc.sportivity = Math.Max(0, hc.sportivity - (30f + 1f) * deltaTime);
-                    break;
+                    case TileMapEnum.TileMapSprite.School:
+                        hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
+                        break;
 
-                case TileMapEnum.TileMapSprite.Hospital:
-                    if (needComponent.currentNeed == NeedType.needForVax)
-                    {
-                        hc.need4vax = Math.Max(0.1f, hc.need4vax - (10 * 24f + 1f) * deltaTime);
-                    }
-                    break;
+                    case TileMapEnum.TileMapSprite.Gym:
+                        if (needComponent.currentNeed == NeedType.needForSport)//la sport viene decrementato di 30 minuti ogni secondo
+                            hc.sportivity = Math.Max(0, hc.sportivity - (30f + 1f) * deltaTime);
+                        break;
 
-                case TileMapEnum.TileMapSprite.OAhome:
-                    if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
-                    {
-                        if (needComponent.currentNeed == NeedType.needToRest)
-                            hc.fatigue = Math.Max(0, hc.fatigue - (2f + 1f) * deltaTime); //fatica viene decrementata di 3 minuti(in game) ogni secondo
-                        else if (needComponent.currentNeed == NeedType.needForFood)
-                            hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime); //la fame viene decrementata di 7 minuti(in game) ogni secondo
+                    case TileMapEnum.TileMapSprite.Hospital:
+                        if (needComponent.currentNeed == NeedType.needForVax)
+                        {
+                            hc.need4vax = Math.Max(0.1f, hc.need4vax - (10 * 24f + 1f) * deltaTime);
+                        }
+                        break;
+
+                    case TileMapEnum.TileMapSprite.OAhome:
+                        if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
+                        {
+                            if (needComponent.currentNeed == NeedType.needToRest)
+                                hc.fatigue = Math.Max(0, hc.fatigue - (2f + 1f) * deltaTime); //fatica viene decrementata di 3 minuti(in game) ogni secondo
+                            else if (needComponent.currentNeed == NeedType.needForFood)
+                                hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime); //la fame viene decrementata di 7 minuti(in game) ogni secondo
                                        
-                    }
-                    else
-                        hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
-                    break;
+                        }
+                        else
+                            hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
+                        break;
 
-                case TileMapEnum.TileMapSprite.RoadHorizontal:
-                case TileMapEnum.TileMapSprite.RoadVertical:
-                case TileMapEnum.TileMapSprite.RoadCrossing:
+                    case TileMapEnum.TileMapSprite.RoadHorizontal:
+                    case TileMapEnum.TileMapSprite.RoadVertical:
+                    case TileMapEnum.TileMapSprite.RoadCrossing:
 
-                    break;
+                        break;
+                }
             }
             //IMPLEMENTARE LOGICA % DEI THRESHOLD
-            //As soon as its current need drops below a minimum threshold (25% che si può parametrizzare) the entity is free to satisfy its next need.
-            if(needComponent.currentNeed == NeedType.needToHeal && !ic.intensiveCare && !ic.infected)
+            //As soon as its current need drops below a minimum threshold (5% che si può parametrizzare) the entity is free to satisfy its next need.
+            if (needComponent.currentNeed == NeedType.needToHeal && !ic.intensiveCare && !ic.infected)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-              
-           else if (needComponent.currentNeed == NeedType.needForFood && hc.hunger < 25f * 7 * 0.6) //25% di 7*60
+                //ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+
+            else if (needComponent.currentNeed == NeedType.needForFood && hc.hunger < 10f * 7 * 0.6) //5% di 7*60
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 25f * 17 * 0.6 && hc.age != HumanStatusEnum.HumanStatus.Retired)
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 10f * 17 * 0.6 && hc.age != HumanStatusEnum.HumanStatus.Retired)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 25f * 13 * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Retired)
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 10f * 13 * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Retired)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-            else if (needComponent.currentNeed == NeedType.needForSport && hc.sportivity < 25f * 23 * 0.6)
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+            else if (needComponent.currentNeed == NeedType.needForSport && hc.sportivity < 10f * 23 * 0.6)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-            else if (needComponent.currentNeed == NeedType.needForSociality && hc.sociality < 25f * 11 * 0.6)
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+            else if (needComponent.currentNeed == NeedType.needForSociality && hc.sociality < 10f * 11 * 0.6)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-            else if (needComponent.currentNeed == NeedType.needForGrocery && hc.grocery < 25f * 25 * 3 * 0.6)
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+            else if (needComponent.currentNeed == NeedType.needForGrocery && hc.grocery < 10f * 25 * 3 * 0.6)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-            else if (needComponent.currentNeed == NeedType.needToWork && hc.work < 25f * 17 * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Worker)
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+            else if (needComponent.currentNeed == NeedType.needToWork && hc.work < 10f * 17 * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Worker)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-            else if (needComponent.currentNeed == NeedType.needToWork && hc.work < 25f * 20 * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Student)
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
+            else if (needComponent.currentNeed == NeedType.needToWork && hc.work < 10f * 20 * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Student)
+            {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
+               // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
+            }
 
             if (hc.PROvax && vaccinationPolicy)
             {                  
-                if (hc.vaccinations == 1 && needComponent.currentNeed == NeedType.needForVax && hc.need4vax < 25f * hc.firstDoseTime * 0.01f)
+                if (hc.vaccinations == 1 && needComponent.currentNeed == NeedType.needForVax && hc.need4vax < 10f * hc.firstDoseTime * 0.01f)
                 {
                     ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-
+                   // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
                 }
-                else if (hc.vaccinations > 1 && needComponent.currentNeed == NeedType.needForVax && hc.need4vax < 25f * 150 * 24 * 0.6)
+                else if (hc.vaccinations > 1 && needComponent.currentNeed == NeedType.needForVax && hc.need4vax < 10f * 150 * 24 * 0.6)
                 {
                     ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
-
+                   // ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
                 }               
             }
 
@@ -415,7 +450,7 @@ public class HumanSystem : SystemBase
     
     protected override void OnStopRunning()
     {
-        Grid.Dispose();
+       // Grid.Dispose();
     }
 
     private static void GetXY(float3 worldPosition, float3 originPosition, float cellSize, out int x, out int y)

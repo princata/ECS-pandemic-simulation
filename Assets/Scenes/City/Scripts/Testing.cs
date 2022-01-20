@@ -36,7 +36,7 @@ public class Testing : MonoBehaviour
         XmlNode mapDataNode = mapNode.SelectSingleNode("layer").SelectSingleNode("data");
         var csvMap = mapDataNode.InnerText;
 
-        int[,] array2Dmap = new int[height, width];
+        string[,] array2Dmap = new string[height, width];
         var curLine = height;
 
         var lines = csvMap.Split('\n');
@@ -50,20 +50,24 @@ public class Testing : MonoBehaviour
             var values = line.Split(',');
 
             var i = 0;
-
+            //qui si può fare il parsing per la string
             foreach (var item in values)
             {
                 if (item.Length != 0)
+                {
                     if (item[0] != '\r')
                     {
-                        array2Dmap[curLine, i++] = int.Parse(item);
+                        //gli mettiamo la string così com'è
+                        array2Dmap[curLine, i++] = item;
                     }
+
+                }
             }
             curLine--;
         }
 
         //num cells x, y, size, offset, element
-        grid = new Grid<GridNode>(width, height, 10f, Vector3.zero, array2Dmap, (TileMapSprite tileType, Grid<GridNode> grid, int x, int y) => new GridNode(tileType, grid, x, y));
+        grid = new Grid<GridNode>(width, height, 10f, Vector3.zero, array2Dmap, (int tileType, Grid<GridNode> grid, int x, int y) => new GridNode(tileType, grid, x, y));
         cityVisual.SetGrid(grid);
         //cameraControl.SetGrid(grid);
     }

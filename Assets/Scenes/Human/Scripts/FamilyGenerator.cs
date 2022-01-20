@@ -5,9 +5,8 @@ using UnityEngine;
 public struct FamilyInfo
 {
     public int familyKey;
-    public int numberOfMembers;
     public HumanStatus age;
-    public Vector2Int homePosition;
+    public Vector3Int homePosition;
 }
 
 public class FamilyGenerator
@@ -18,12 +17,12 @@ public class FamilyGenerator
     public static int studentCounter = 0;
     public static int workerCounter = 0;
     public static int retiredCounter = 0;
-    public static Vector2Int lastHomePosition;
+    public static Vector3Int lastHomePosition;
     public static TemplateInfo templateInfos;
-    public static NativeArray<Vector2Int> houses;
-    public static NativeArray<Vector2Int> OAhouses;
+    public static NativeArray<Vector3Int> houses;
+    public static NativeArray<Vector3Int> OAhouses;
 
-    public void SetHouses(NativeArray<Vector2Int> home , NativeArray<Vector2Int> OAhome)
+    public void SetHouses(NativeArray<Vector3Int> home , NativeArray<Vector3Int> OAhome)
     {
         houses = home;
         OAhouses = OAhome;
@@ -49,6 +48,7 @@ public class FamilyGenerator
 
         if (currentFamily != familyCounter)
         {
+            UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
             if (templateCounter == 4 && familyCounter % 2 == 0) //ogni family counter pari piazzo due anziani nelle case di riposo
                 lastHomePosition = OAhouses[Random.Range(0, OAhouses.Length)];
             else
@@ -57,31 +57,30 @@ public class FamilyGenerator
 
         if(templateInfos.template1Total > 0)
         {
-            templateCounter = 0;
-            templateInfos.template1Total--;
+            templateCounter = 0;            
         }
         else if (templateInfos.template2Total > 0)
         {
             templateCounter = 1;
-            templateInfos.template2Total--;
+            
         }
         else if (templateInfos.template3Total > 0)
         {
             templateCounter = 2;
-            templateInfos.template3Total--;
+           
         }
         else if (templateInfos.template4Total > 0)
         {
             templateCounter = 3;
-            templateInfos.template4Total--;
+            
         }
         else if (templateInfos.template5Total > 0)
         {
             templateCounter = 4;
-            templateInfos.template5Total--;
+           
         }
 
-
+       
         switch (templateCounter)
         {
             case 0:
@@ -90,7 +89,6 @@ public class FamilyGenerator
                 {
                     studentCounter++;
                     info.age = HumanStatus.Student;
-                    info.numberOfMembers = 4;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
@@ -99,14 +97,14 @@ public class FamilyGenerator
                 {
                     workerCounter++;
                     info.age = HumanStatus.Worker;
-                    info.numberOfMembers = 4;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
                 }
                 if (studentCounter >= 2 && workerCounter >= 2)
                 {
-                   // templateCounter++;
+                    templateInfos.template1Total--;
+                    // templateCounter++;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
@@ -122,7 +120,6 @@ public class FamilyGenerator
                 {
                     studentCounter++;
                     info.age = HumanStatus.Student;
-                    info.numberOfMembers = 5;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
@@ -131,7 +128,6 @@ public class FamilyGenerator
                 {
                     workerCounter++;
                     info.age = HumanStatus.Worker;
-                    info.numberOfMembers = 5;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
@@ -140,7 +136,6 @@ public class FamilyGenerator
                 {
                     retiredCounter++;
                     info.age = HumanStatus.Retired;
-                    info.numberOfMembers = 5;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
@@ -148,6 +143,7 @@ public class FamilyGenerator
 
                 if (studentCounter >= 1 && workerCounter >= 2 && retiredCounter >= 2)
                 {
+                    templateInfos.template2Total--;
                     //templateCounter++;
                     familyCounter++;
                     studentCounter = 0;
@@ -164,14 +160,14 @@ public class FamilyGenerator
                 {
                     studentCounter++;
                     info.age = HumanStatus.Student;
-                    info.numberOfMembers = 3;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
                 }
                 if (studentCounter >= 3)
                 {
-                   // templateCounter++;
+                    // templateCounter++;
+                    templateInfos.template3Total--;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
@@ -187,14 +183,14 @@ public class FamilyGenerator
                 {
                     workerCounter++;
                     info.age = HumanStatus.Worker;
-                    info.numberOfMembers = 2;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
                 }
                 if (workerCounter >= 2)
                 {
-                   // templateCounter++;
+                    // templateCounter++;
+                    templateInfos.template4Total--;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
@@ -210,14 +206,14 @@ public class FamilyGenerator
                 {
                     retiredCounter++;
                     info.age = HumanStatus.Retired;
-                    info.numberOfMembers = 2;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
                 }
                 if (retiredCounter >= 2)
                 {
-                   // templateCounter = 0; //ciclo ricomincia
+                    // templateCounter = 0;
+                    templateInfos.template5Total--;
                     familyCounter++;
                     studentCounter = 0;
                     workerCounter = 0;
