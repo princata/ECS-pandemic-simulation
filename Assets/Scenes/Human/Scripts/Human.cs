@@ -16,6 +16,14 @@ public struct TemplateInfo
     public int template5Total;
 }
 
+public struct TileInfo
+{
+    public int x;
+    public int y;
+    public int floor;
+    public TileMapEnum.TileMapSprite type;
+}
+
 public class Human : MonoBehaviour
 {
     public static Human Instance { private set; get; }
@@ -39,7 +47,10 @@ public class Human : MonoBehaviour
     [SerializeField] public Material humanSpriteMaterial;
 
     public NativeArray<Vector3Int> houses;
+    public static NativeMultiHashMap<int, TileInfo> places;
 
+    public const int quadrantYMultiplier = 1000;
+    public const float quadrantCellSize = 50f;
     private void Awake()
     {
         Instance = this;
@@ -90,6 +101,9 @@ public class Human : MonoBehaviour
         List<Vector3Int> OAhomeList = new List<Vector3Int>();
         // var mapGrid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType(); });
         var mapGrid = Testing.Instance.grid;
+        places = new NativeMultiHashMap<int, TileInfo>(gridWidth * gridHeight, Allocator.Persistent);
+        places.Capacity = gridWidth * gridHeight;
+        NativeMultiHashMap<int, TileInfo>.ParallelWriter places2 = places.AsParallelWriter();
         
         for (int i = 0; i < gridWidth; i++)
         {
@@ -99,8 +113,8 @@ public class Human : MonoBehaviour
                 string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); //conversione numero in hex
                 foreach (var floor in tiles) //analisi di ogni char rappresentante un piano
                 {
-                   
-                    if (int.Parse(floor.ToString(),System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Home)
+
+                    if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Home)
                     {
                         housesList.Add(new Vector3Int(i, j, f++));
                     }
@@ -110,19 +124,76 @@ public class Human : MonoBehaviour
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.School)
                     {
-                        schoolsList.Add(new Vector3Int(i, j,f++));
+                        schoolsList.Add(new Vector3Int(i, j, f++));
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.OAhome)
-                        OAhomeList.Add(new Vector3Int(i, j, f++));
+                    { 
+                        OAhomeList.Add(new Vector3Int(i, j, f++)); 
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Pub)
+                    {
+                        int hashmapkey = GetPositionHashMapKey(i, j);
+                        places2.Add(hashmapkey, new TileInfo
+                        {
+                            x = i,
+                            y = j,
+                            floor = f++,
+                            type = TileMapEnum.TileMapSprite.Pub
+                        });
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Park)
+                    {
+                        int hashmapkey = GetPositionHashMapKey(i, j);
+                        places2.Add(hashmapkey, new TileInfo
+                        {
+                            x = i,
+                            y = j,
+                            floor = f++,
+                            type = TileMapEnum.TileMapSprite.Park
+                        });
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Supermarket)
+                    {
+                        int hashmapkey = GetPositionHashMapKey(i, j);
+                        places2.Add(hashmapkey, new TileInfo
+                        {
+                            x = i,
+                            y = j,
+                            floor = f++,
+                            type = TileMapEnum.TileMapSprite.Supermarket
+                        });
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Hospital)
+                    {
+                        int hashmapkey = GetPositionHashMapKey(i, j);
+                        places2.Add(hashmapkey, new TileInfo
+                        {
+                            x = i,
+                            y = j,
+                            floor = f++,
+                            type = TileMapEnum.TileMapSprite.Hospital
+                        });
+                    }
+                    else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Gym)
+                    {
+                        int hashmapkey = GetPositionHashMapKey(i, j);
+                        places2.Add(hashmapkey, new TileInfo
+                        {
+                            x = i,
+                            y = j,
+                            floor = f++,
+                            type = TileMapEnum.TileMapSprite.Gym
+                        });
+                    }
                 }
             }
         }
-        houses = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);
         NativeArray<Vector3Int> offices = officesList.ToNativeArray<Vector3Int>(Allocator.Temp);
         NativeArray<Vector3Int> schools = schoolsList.ToNativeArray<Vector3Int>(Allocator.Temp);
         NativeArray<Vector3Int> OAhouses = OAhomeList.ToNativeArray<Vector3Int>(Allocator.Temp);
-        famGenerator.SetHouses(houses, OAhouses);
+        famGenerator.SetHouses(housesList, OAhouses);
         famGenerator.SetTemplateInfo(templateInfo);
+        houses = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);
         //famGenerator.PrintTemplateDebug();
         float symptomsProbability = 0f;
         float humanDeathProbability = 0f;
@@ -138,6 +209,7 @@ public class Human : MonoBehaviour
             HumanStatus age = familyInfo.age;
             var homePosition = familyInfo.homePosition;
             var officePosition = Vector3Int.zero;
+          
 
             if (conf.Lockdown)
                 socialResponsability = GenerateNormalRandom(0.75f, 0.05f, 0.50f, 0.99f);
@@ -146,7 +218,7 @@ public class Human : MonoBehaviour
 
             if (vaccinationPolicy)
             {
-                if (socialResponsability > 0.5f)
+                if (socialResponsability > 0.3f)
                     PROvax = true;
                 else
                     PROvax = false;
@@ -188,9 +260,9 @@ public class Human : MonoBehaviour
 
             //Vector3 position = new float3((UnityEngine.Random.Range(0, gridWidth)) * 10f + UnityEngine.Random.Range(0, 10f), (UnityEngine.Random.Range(0, gridHeight)) * 10f + UnityEngine.Random.Range(0, 10f), 0);
 
-            //Vector3 position = new float3(homePosition.x * 10f + UnityEngine.Random.Range(0, 10f), homePosition.y * 10f + UnityEngine.Random.Range(0, 10f), 0);
+            Vector3 position = new float3(homePosition.x * 10f + UnityEngine.Random.Range(0, 10f), homePosition.y * 10f + UnityEngine.Random.Range(0, 10f), 0);
 
-            Vector3 position = new float3(homePosition.x *10f , homePosition.y * 10f, 0);
+            //Vector3 position = new float3(homePosition.x *10f , homePosition.y * 10f, 0);
 
             entityManager.SetComponentData(entity, new TileComponent 
             {
@@ -373,7 +445,7 @@ public class Human : MonoBehaviour
         offices.Dispose();
         schools.Dispose();
         entityArray.Dispose();
-        
+        famGenerator.Disposing();
 
     }
 
@@ -396,6 +468,7 @@ public class Human : MonoBehaviour
     private void OnDestroy()
     {
         Instance.houses.Dispose();
+        places.Dispose();
     }
 
     public float Percent(float total, int percent)
@@ -419,5 +492,10 @@ public class Human : MonoBehaviour
         t.template5Total = (int)Math.Ceiling(d);
 
         return t;
+    }
+
+    public static int GetPositionHashMapKey(int x, int y)
+    {
+        return (int)(math.floor(x / quadrantCellSize) + (quadrantYMultiplier * math.floor(y / quadrantCellSize)));
     }
 }

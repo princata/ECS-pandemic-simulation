@@ -21,10 +21,12 @@ public class GetNeedPathSystem : SystemBase
 
     private EndSimulationEntityCommandBufferSystem ecbSystem;
     private NativeArray<Vector3Int> myHouses;
+    public NativeMultiHashMap<int, TileInfo> placesHashMap;
 
     protected override void OnCreate()
     {
         ecbSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
+       
     }
 
     protected override void OnStartRunning()
@@ -39,6 +41,7 @@ public class GetNeedPathSystem : SystemBase
         start_offset.CopyFrom(new int2[] { new int2(-1, 1), new int2(1, 1), new int2(1, -1), new int2(-1, -1) });
        // rnd = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 420));
         myHouses = Human.Instance.houses;
+        placesHashMap = Human.places;
     }
 
     protected override void OnUpdate()
@@ -52,7 +55,8 @@ public class GetNeedPathSystem : SystemBase
        // var rnd = this.rnd;
         var start_offset = this.start_offset;
         var directions = this.directions;
-
+        
+        var placesHM = placesHashMap;
         var houses = myHouses;
         var lockdown = Human.conf.Lockdown;
         var lockGym = Human.conf.lockGym;
@@ -66,7 +70,7 @@ public class GetNeedPathSystem : SystemBase
         //Use ref for components that you write to, and in for components that you only read.
         //Marking components as read - only helps the job scheduler execute your jobs more efficiently.
 
-        JobHandle jobHandle = Entities.WithNativeDisableParallelForRestriction(randomArray).
+        JobHandle jobHandle = Entities.WithNativeDisableParallelForRestriction(randomArray).WithNativeDisableContainerSafetyRestriction(placesHM).
             ForEach((Entity entity, int nativeThreadIndex, ref NeedPathParams needPathParams, ref HumanComponent humanComponent, ref TileComponent tileComponent, in Translation translation, in NeedComponent needComponent) =>
         {
 
@@ -125,7 +129,7 @@ public class GetNeedPathSystem : SystemBase
                         do
                         {
                             friendIndex = random.NextInt(0, houses.Length);
-                        } while (houses[friendIndex].x == humanComponent.homePosition.x || houses[friendIndex].y == humanComponent.homePosition.y); //cerco una casa di una persona fin quando non è vicino casa mia
+                        } while (houses[friendIndex].x == humanComponent.homePosition.x && houses[friendIndex].y == humanComponent.homePosition.y && houses[friendIndex].z == humanComponent.homePosition.z); //cerco una casa di una persona fin quando non è vicino casa mia
                         endX = houses[friendIndex].x;
                         endY = houses[friendIndex].y;
                         tileComponent.currentTile = TileMapEnum.TileMapSprite.Home;
@@ -152,7 +156,7 @@ public class GetNeedPathSystem : SystemBase
                     break;
                 case NeedType.needForSport:
                     result = new NativeArray<TileMapEnum.TileMapSprite>(2, Allocator.Temp);
-                    if (!lockdown && humanComponent.age != HumanStatusEnum.HumanStatus.Retired && !lockGym)
+                    if (!lockdown && !lockGym)
                     {
                         result[0] = TileMapEnum.TileMapSprite.Gym;
                         result[1] = TileMapEnum.TileMapSprite.Park;
@@ -239,7 +243,7 @@ public class GetNeedPathSystem : SystemBase
             }
 
             //TODO this could esplode... keep an eye on this
-            for (int range = 1; !found; range++)
+           /* for (int range = 1; !found; range++)
             {
                 //random number selection
                 int starting_edge = random.NextInt(0, 4);
@@ -266,9 +270,9 @@ public class GetNeedPathSystem : SystemBase
                                         endX = i;
                                         endY = j;
                                         found = true;
+                                        tileComponent.currentTile = tile;
+                                        tileComponent.currentFloor = k;
                                     }
-                                    tileComponent.currentTile = tile;
-                                    tileComponent.currentFloor = k;
 
                                 }
 
@@ -276,10 +280,47 @@ public class GetNeedPathSystem : SystemBase
                     }
                     pos_step = 0;
                 }
+            }*/
+
+            if (!found)
+            {
+                int hashMapKey = Human.GetPositionHashMapKey(startX, startY);
+                NativeArray<int> keys = placesHM.GetKeyArray(Allocator.Temp);
+                TileInfo tileInfo;
+                NativeMultiHashMapIterator<int> nativeMultiHashMapIterator;
+
+                do
+                {
+                    if (placesHM.TryGetFirstValue(hashMapKey, out tileInfo, out nativeMultiHashMapIterator))
+                    {
+                        do
+                        {
+                            for (int l = 0; l < result.Length && !found; l++)
+                            {
+                                if (result[l] == tileInfo.type)
+                                {
+                                    found = true;
+                                    endX = tileInfo.x;
+                                    endY = tileInfo.y;
+                                    tileComponent.currentTile = tileInfo.type;
+                                    tileComponent.currentFloor = tileInfo.floor;
+                                }
+                            }
+
+                        } while (placesHM.TryGetNextValue(out tileInfo, ref nativeMultiHashMapIterator) && !found);
+                    }
+
+                    hashMapKey = keys[random.NextInt(0,keys.Length)];
+
+                } while (!found);
+
+                keys.Dispose();
+
             }
+
             randomArray[nativeThreadIndex] = random;
             result.Dispose();
-
+           
             ecb.RemoveComponent<NeedPathParams>(nativeThreadIndex, entity);
 
             ecb.AddComponent<PathfindingParams>(nativeThreadIndex, entity, new PathfindingParams

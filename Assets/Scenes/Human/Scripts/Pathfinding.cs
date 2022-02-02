@@ -66,7 +66,7 @@ public class Pathfinding : ComponentSystem
                 pathfindingParamsComponentDataFromEntity = GetComponentDataFromEntity<PathfindingParams>(),
                 pathFollowComponentDataFromEntity = GetComponentDataFromEntity<PathFollow>(),
                 pathPositionBufferFromEntity = GetBufferFromEntity<PathPosition>(),
-            }.Run();//Schedule();//TODO Changed to Schedule, don't know if that will work
+            }./*Run();*/Schedule().Complete();//TODO Changed to Schedule, don't know if that will work
         }
 
         pathNodeArray.Dispose();
@@ -167,15 +167,15 @@ public class Pathfinding : ComponentSystem
                 pathNodeArray[i] = pathNode;
             }
 
-            NativeArray<int2> neighbourOffsetArray = new NativeArray<int2>(4, Allocator.Temp);
+            NativeArray<int2> neighbourOffsetArray = new NativeArray<int2>(8, Allocator.Temp);
             neighbourOffsetArray[0] = new int2(-1, 0); // Left
             neighbourOffsetArray[1] = new int2(+1, 0); // Right
             neighbourOffsetArray[2] = new int2(0, +1); // Up
             neighbourOffsetArray[3] = new int2(0, -1); // Down
-            //neighbourOffsetArray[4] = new int2(-1, -1); // Left Down
-            //neighbourOffsetArray[5] = new int2(-1, +1); // Left Up
-            //neighbourOffsetArray[6] = new int2(+1, -1); // Right Down
-            //neighbourOffsetArray[7] = new int2(+1, +1); // Right Up
+            neighbourOffsetArray[4] = new int2(-1, -1); // Left Down
+            neighbourOffsetArray[5] = new int2(-1, +1); // Left Up
+            neighbourOffsetArray[6] = new int2(+1, -1); // Right Down
+            neighbourOffsetArray[7] = new int2(+1, +1); // Right Up
 
             int endNodeIndex = CalculateIndex(endPosition.x, endPosition.y, gridSize.x);
 

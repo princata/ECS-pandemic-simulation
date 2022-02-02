@@ -58,7 +58,7 @@ public class Grid<TGridObject>
                     tms += int.Parse(floor).ToString("X"); //conversione del singolo elemento anche solo di un piano a int per poi portarlo all'hex
                     i++;
                 }
-                Debug.Log(tms);
+                
                 gridArray[x, y] = createGridObject(int.Parse(tms, System.Globalization.NumberStyles.HexNumber), this, x, y); //inserito nella griglia numero int da decodificare
                 
             }
@@ -74,12 +74,12 @@ public class Grid<TGridObject>
             {
                 for (int y = 0; y < height; y++)
                 {
-                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 100f);
-                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 100f);
+                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.red, 100f);
+                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.red, 100f);
                 }
             }
-            Debug.DrawLine(GetWorldPosition(0, height), GetWorldPosition(width, height), Color.white, 100f);
-            Debug.DrawLine(GetWorldPosition(width, 0), GetWorldPosition(width, height), Color.white, 100f);
+            Debug.DrawLine(GetWorldPosition(0, height), GetWorldPosition(width, height), Color.red, 100f);
+            Debug.DrawLine(GetWorldPosition(width, 0), GetWorldPosition(width, height), Color.red, 100f);
 
             OnGridObjectChanged += (object sender, OnGridObjectChangedEventArgs eventArgs) =>
             {

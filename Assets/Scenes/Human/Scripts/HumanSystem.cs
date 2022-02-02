@@ -290,25 +290,6 @@ public class HumanSystem : SystemBase
                         else
                             hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
                         break;
-                   /* case TileMapEnum.TileMapSprite.Home2:
-                        if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
-                        {
-                            if (needComponent.currentNeed == NeedType.needToRest)
-                                hc.fatigue = Math.Max(0, hc.fatigue - (2f + 1f) * deltaTime); //fatica viene decrementata di 3 minuti(in game) ogni secondo
-                            else if (needComponent.currentNeed == NeedType.needForFood)
-                                hc.hunger = Math.Max(0, hc.hunger - (7f + 1f) * deltaTime); //la fame viene decrementata di 7 minuti(in game) ogni secondo
-
-                            if (needComponent.currentNeed == NeedType.needToWork)
-                            {
-                                if ((hc.age == HumanStatusEnum.HumanStatus.Student && lockdown) || (hc.age == HumanStatusEnum.HumanStatus.Student && lockSchool))
-                                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime); //se ce lockdown o lockdown solo per scuole allora lavoro da casa
-                                if (hc.age == HumanStatusEnum.HumanStatus.Worker && lockdown && hc.jobEssentiality < 0.5f)
-                                    hc.work = Math.Max(0, hc.work - (2f + 1f) * deltaTime);
-                            }
-                        }
-                        else
-                            hc.sociality = Math.Max(0, hc.sociality - (5f + 1f) * deltaTime); //la socialità viene decrementata di 5 minuti(in game) ogni secondo
-                        break;*/
 
                     case TileMapEnum.TileMapSprite.Park:
                         if (needComponent.currentNeed == NeedType.needForSport)//la sport viene decrementato di 30 minuti ogni secondo

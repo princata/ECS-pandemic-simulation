@@ -1,4 +1,5 @@
 ﻿using HumanStatusEnum;
+using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 
@@ -19,12 +20,15 @@ public class FamilyGenerator
     public static int retiredCounter = 0;
     public static Vector3Int lastHomePosition;
     public static TemplateInfo templateInfos;
-    public static NativeArray<Vector3Int> houses;
+    public static NativeList<Vector3Int> houses;
     public static NativeArray<Vector3Int> OAhouses;
 
-    public void SetHouses(NativeArray<Vector3Int> home , NativeArray<Vector3Int> OAhome)
+    public void SetHouses(List<Vector3Int> home , NativeArray<Vector3Int> OAhome)
     {
-        houses = home;
+        houses = new NativeList<Vector3Int>(home.Count,Allocator.Temp);
+        foreach (var hom in home)
+            houses.Add(hom);
+        
         OAhouses = OAhome;
     }
 
@@ -52,7 +56,13 @@ public class FamilyGenerator
             if (templateCounter == 4 && familyCounter % 2 == 0) //ogni family counter pari piazzo due anziani nelle case di riposo
                 lastHomePosition = OAhouses[Random.Range(0, OAhouses.Length)];
             else
-                lastHomePosition = houses[UnityEngine.Random.Range(0, houses.Length)];
+            {
+                int index = UnityEngine.Random.Range(0, houses.Length);
+                lastHomePosition = houses.ElementAt(index);
+                houses.RemoveAtSwapBack(index);
+            }
+
+           
         }
 
         if(templateInfos.template1Total > 0)
@@ -225,6 +235,12 @@ public class FamilyGenerator
         }
 
         return info;
+    }
+
+    public void Disposing()
+    {
+        houses.Dispose();
+        OAhouses.Dispose();
     }
 
 }
