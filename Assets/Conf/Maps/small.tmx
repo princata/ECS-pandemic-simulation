@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="left-up" width="20" height="15" tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="1">
- <tileset firstgid="1" source="tilesetMap.tsx"/>
+ <tileset firstgid="1" source="C:/Users/step9/Downloads/TurinMap_TestBundle/turin_tileset.tsx"/>
  <layer id="1" name="Livello tile 1" width="20" height="15">
   <data encoding="csv">
 2,2,2,2,2,3,5,7,9,2,2,2,2,2,2,9,4,9,9,10,

@@ -44,7 +44,7 @@ public class ContagionSystem : SystemBase
         var vaccinationPolicy = Human.Instance.vaccinationPolicy;
         var startIntensives = startIntensive;        
         var randomArray = World.GetExistingSystem<RandomSystem>().RandomArray;
-
+        var curTotIntensive = currentTotIntensive;
         float deltaTime = Time.DeltaTime;
 
         NativeArray<long> localIntensiveCounter = new NativeArray<long>(1, Allocator.TempJob);
@@ -87,13 +87,13 @@ public class ContagionSystem : SystemBase
                                     //se sono a casa e un infetto della mia famiglia è sintomatico e vicino a me allora mi contagio 18% + velocemente ACCORDING TO LUXEMBURG STUDY
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += (0.25f + 0.18f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
+                                        ic.contagionCounter += (2f * 0.18f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
 
                                     }
 
                                     else
                                     {
-                                        ic.contagionCounter += (0.25f + 0.05f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
+                                        ic.contagionCounter += (2f * 0.05f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
                                     }
                                 }
                                 else if (quadrantData.familyKey != humanComponent.familyKey && tc.currentFloor == quadrantData.currentFloor)//NO HOUSEHOLD CONTACT
@@ -101,11 +101,11 @@ public class ContagionSystem : SystemBase
 
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += (0.25f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 12%
+                                        ic.contagionCounter += (2f * 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 12%
                                     }
                                     else
                                     {
-                                        ic.contagionCounter += (0.25f + 0.012f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 1.2%                                        
+                                        ic.contagionCounter += (2f * 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 1.2%                                        
                                     }
 
                                 }
@@ -118,13 +118,13 @@ public class ContagionSystem : SystemBase
                                     Debug.Log($"workplace transmission at {tc.currentFloor}th floor");
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += ( 0.25f + 0.15f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
+                                        ic.contagionCounter += (2f * 0.15f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
 
                                     }
 
                                     else
                                     {
-                                        ic.contagionCounter += ( 0.25f + 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
+                                        ic.contagionCounter += (2f * 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 5%                                    
                                     }
                                 }
 
@@ -132,11 +132,11 @@ public class ContagionSystem : SystemBase
                             //SE NON SONO A CASA e siamo sullo stesso piano
                             else if (quadrantData.symptomatic && tc.currentFloor == quadrantData.currentFloor) //caso sintomatico
                             {
-                                ic.contagionCounter += (0.25f + 0.12f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 15.4%
+                                ic.contagionCounter += (2f * 0.1f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //SIC NORMAL CONTACT TRANSMISSION -> (0.8% - 15.4%) SELECTED VALUE: 15.4%
                             }
                             else if (!quadrantData.symptomatic && tc.currentFloor == quadrantData.currentFloor)
                             {
-                                ic.contagionCounter += (0.25f + 0.02f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 2.2%
+                                ic.contagionCounter += (2f * 0.012f) * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC NORMAL CONTACT TRANSMISSION -> (0% - 2.2%) SELECTED VALUE: 2.2%
                             }
                         }
                         //TODO we could add a cap here to speed up the check
@@ -186,7 +186,7 @@ public class ContagionSystem : SystemBase
                     if (ic.myRndValue > (100f - (ic.currentHumanDeathProbability - (ic.currentImmunityLevel * ic.currentHumanDeathProbability))))//IMPORTANTE! I PARAMETRI DI PERCENTUALE MORTE SONO SIMILI A QUELLI DI CRITICAL DISEASE DELL'ARTICOLO
                     {
                         
-                        if (currentTotIntensive <= startIntensives && currentTotIntensive > 0 )
+                        if (curTotIntensive <= startIntensives && curTotIntensive > 0 )
                         {
                             ic.intensiveCare = true;
                             unsafe

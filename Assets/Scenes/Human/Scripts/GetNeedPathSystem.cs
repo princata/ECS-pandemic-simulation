@@ -224,7 +224,7 @@ public class GetNeedPathSystem : SystemBase
 
             }
 
-            for (int l = 0; l < result.Length && !found; l++)
+            /*for (int l = 0; l < result.Length && !found; l++)
             {
                 string temp = grid[startX + startY * width].ToString("X"); //cerco nei piani superiori
                 for(int k = 0; k < temp.Length && !found; k++)
@@ -235,12 +235,12 @@ public class GetNeedPathSystem : SystemBase
                         endX = startX;
                         endY = startY;
                         found = true;
+                        tileComponent.currentTile = tile;
+                        tileComponent.currentFloor = k;
                     }
-                    tileComponent.currentTile = tile;
-                    tileComponent.currentFloor = k;
 
                 }
-            }
+            }*/
 
             //TODO this could esplode... keep an eye on this
            /* for (int range = 1; !found; range++)

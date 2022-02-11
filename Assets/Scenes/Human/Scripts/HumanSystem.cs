@@ -153,6 +153,28 @@ public class HumanSystem : SystemBase
                     searchRadius = 2
                 });
             }
+            else if (hc.work > 16 * 60 && hc.age == HumanStatusEnum.HumanStatus.Worker) //non lavora da 16 ore
+            {
+                ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
+                {
+                    currentNeed = NeedType.needToWork
+                });
+                ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
+                {
+                    searchRadius = 2
+                });
+            }
+            else if (hc.work > 19 * 60 && hc.age == HumanStatusEnum.HumanStatus.Student) //non va a scuola lavora da 19 ore
+            {
+                ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
+                {
+                    currentNeed = NeedType.needToWork
+                });
+                ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
+                {
+                    searchRadius = 2
+                });
+            }
             else if (hc.sportivity > 2 * 22 * 60) //non si allena da 44 ore (in due giorni quindi)
             {
                 ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
@@ -180,28 +202,6 @@ public class HumanSystem : SystemBase
                 ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                 {
                     currentNeed = NeedType.needForGrocery
-                });
-                ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
-                {
-                    searchRadius = 2
-                });
-            }
-            else if (hc.work > 16 * 60 && hc.age == HumanStatusEnum.HumanStatus.Worker) //non lavora da 16 ore
-            {
-                ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
-                {
-                    currentNeed = NeedType.needToWork
-                });
-                ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
-                {
-                    searchRadius = 2
-                });
-            }
-            else if (hc.work > 19 * 60 && hc.age == HumanStatusEnum.HumanStatus.Student) //non va a scuola lavora da 19 ore
-            {
-                ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
-                {
-                    currentNeed = NeedType.needToWork
                 });
                 ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
                 {
@@ -354,7 +354,7 @@ public class HumanSystem : SystemBase
             //As soon as its current need drops below a minimum threshold (5% che si può parametrizzare) the entity is free to satisfy its next need.
             if (needComponent.currentNeed == NeedType.needToHeal && !ic.intensiveCare && !ic.infected)
             {
-                ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
+                ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity); //entita rimane con il need to heal fin quando è in terapia intensiva
                 //ecb.RemoveComponent<TileComponent>(nativeThreadIndex, entity);
             }
 

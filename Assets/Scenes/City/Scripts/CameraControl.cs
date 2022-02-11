@@ -9,7 +9,7 @@ public class CameraControl : MonoBehaviour
     private float targetOrtho;
     // private float smoothSpeed = 2000.0f;
     private float minOrtho = 25f;
-    private float maxOrtho = 375f ;
+    private float maxOrtho = 2151f ;
     public float defaultMoveSpeed ;
 
     public float mapMinX, mapMaX, mapMinY, mapMaxY;

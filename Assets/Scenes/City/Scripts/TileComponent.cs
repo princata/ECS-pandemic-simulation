@@ -20,7 +20,8 @@ namespace TileMapEnum
         Home = 9,
         Hospital = 10,
         Gym = 11,
-        School = 12
-        
+        School = 12,
+        Impassable = 13,
+        Walkable = 14
     }
 }

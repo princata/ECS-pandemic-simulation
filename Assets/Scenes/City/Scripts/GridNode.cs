@@ -23,7 +23,8 @@ public class GridNode
         if (this.firstfloor == (int)TileMapSprite.RoadCrossing ||
             this.firstfloor == (int)TileMapSprite.RoadVertical ||
             this.firstfloor == (int)TileMapSprite.RoadHorizontal ||
-            this.firstfloor == (int)TileMapSprite.Park)
+            this.firstfloor == (int)TileMapSprite.Park||
+            this.firstfloor == (int)TileMapSprite.Walkable)
             isWalkable = true;
         else isWalkable = false;
         
