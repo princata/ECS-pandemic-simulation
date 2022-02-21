@@ -212,13 +212,13 @@ public class Human : MonoBehaviour
           
 
             if (conf.Lockdown)
-                socialResponsability = GenerateNormalRandom(0.75f, 0.05f, 0.50f, 0.99f);
+                socialResponsability = GenerateNormalRandom(0.75f, 0.25f, 0.50f, 0.99f);
             else
-                socialResponsability = GenerateNormalRandom(0.5f, 0.2f, 0f, 0.99f);
+                socialResponsability = GenerateNormalRandom(0.5f, 0.3f, 0f, 0.99f);
 
             if (vaccinationPolicy)
             {
-                if (socialResponsability > 0.3f)
+                if (socialResponsability > 0.35f)
                     PROvax = true;
                 else
                     PROvax = false;
@@ -252,10 +252,12 @@ public class Human : MonoBehaviour
             }
             else if (age == HumanStatus.Retired) // 60-90 age
             {
+                UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
                 symptomsProbability = GenerateNormalRandom(0.50f, 0.1f, 0.5f, 1f) * 100; //50% sintomi
                 humanDeathProbability = GenerateNormalRandom(0.10f, 0.1f, 0.1f, 1f) * 100; // 10% IFR (INFECTION FATALITY RATE)
                 if (vaccinationPolicy && PROvax)
-                    firstDoseTime = UnityEngine.Random.Range(1f * 25f * 60f, 30f * 25f * 60f);
+                     firstDoseTime = UnityEngine.Random.Range(1f * 25f * 60f, 30f * 25f * 60f);
+                   
             }
 
             //Vector3 position = new float3((UnityEngine.Random.Range(0, gridWidth)) * 10f + UnityEngine.Random.Range(0, 10f), (UnityEngine.Random.Range(0, gridHeight)) * 10f + UnityEngine.Random.Range(0, 10f), 0);

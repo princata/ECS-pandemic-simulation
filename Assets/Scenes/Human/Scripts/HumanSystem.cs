@@ -107,8 +107,43 @@ public class HumanSystem : SystemBase
         //cycle all the entities without a NeedComponent and assign it according to parameters
         JobHandle jobhandle1 = Entities.WithNone<NeedComponent>().ForEach((Entity entity, int nativeThreadIndex, ref HumanComponent hc, ref InfectionComponent ic) =>
         {
-            if(ic.symptomatic && ic.infected && ic.intensiveCare && ic.status == Status.infectious){
-                             
+           
+            if (hc.PROvax && vaccinationPolicy && !ic.intensiveCare && ic.status != Status.recovered)
+            {
+
+                if (hc.vaccinations == 0 && hc.need4vax > hc.firstDoseTime - hc.immunityTime && ic.currentImmunityLevel < 0.41f)
+                {
+                    ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
+                    {
+                        currentNeed = NeedType.needForVax
+                    });
+                    ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
+                    {
+                        searchRadius = 2
+                    });
+                    hc.vaccinations++;
+                    ic.currentImmunityLevel = 0.9f;
+                    hc.immunityTime = 0f;
+                }
+                else if (hc.vaccinations > 0 && hc.need4vax > (150 * 23 * 60) - hc.immunityTime && ic.currentImmunityLevel < 0.41f) //5 mesi
+                {
+                    ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
+                    {
+                        currentNeed = NeedType.needForVax
+                    });
+                    ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
+                    {
+                        searchRadius = 2
+                    });
+                    hc.vaccinations++;
+                    ic.currentImmunityLevel = 0.9f;
+                    hc.immunityTime = 0f;
+                }
+
+            }
+            if (ic.symptomatic && ic.infected && ic.intensiveCare && ic.status == Status.infectious)
+            {
+
                 ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                 {
                     currentNeed = NeedType.needToHeal
@@ -118,7 +153,6 @@ public class HumanSystem : SystemBase
                     searchRadius = 2
                 });
             }
-
             //set searchRadius for retrieving areas in the map included in that radius if the need is over a certain threshold
             else if (hc.hunger > 60 * 6) //non mangia da 6 ore
             {
@@ -209,39 +243,7 @@ public class HumanSystem : SystemBase
                 });
             }
 
-            if (hc.PROvax && vaccinationPolicy && !ic.intensiveCare && ic.status != Status.recovered)
-            {
-                  
-                if (hc.vaccinations == 0 && hc.need4vax > hc.firstDoseTime - hc.immunityTime && ic.currentImmunityLevel < 0.41f)
-                {
-                    ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
-                    {
-                        currentNeed = NeedType.needForVax
-                    });
-                    ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
-                    {
-                        searchRadius = 2
-                    });
-                    hc.vaccinations++;
-                    ic.currentImmunityLevel = 0.9f;
-                    hc.immunityTime = 0f;
-                }
-                else if (hc.vaccinations > 0 && hc.need4vax > (150 * 23 * 60) - hc.immunityTime && ic.currentImmunityLevel < 0.41f) //5 mesi
-                {
-                    ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
-                    {
-                        currentNeed = NeedType.needForVax
-                    });
-                    ecb.AddComponent<NeedPathParams>(nativeThreadIndex, entity, new NeedPathParams
-                    {
-                        searchRadius = 2
-                    });
-                    hc.vaccinations++;
-                    ic.currentImmunityLevel = 0.9f;
-                    hc.immunityTime = 0f;
-                }
-                
-            }
+            
             if(hc.immunityTime > 120 * 24* 60 && ic.currentImmunityLevel > 0.4f)
             {
                 ic.currentImmunityLevel = 0.39f; //dati presi da articolo tgcom protezione vaccini

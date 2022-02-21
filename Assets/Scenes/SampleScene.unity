@@ -1306,7 +1306,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vaccinationPolicy: 0
-  intensiveCarePercent: 1
+  intensiveCarePercent: 10
   template1Percent: 30
   template2Percent: 20
   template3Percent: 20

@@ -1,8 +1,8 @@
 {
    "appendLog": false,
-   "numberOfHumans" : 1,
-   "numberOfInfects" : 0,
-   "timeScale" : 40,
+   "numberOfHumans" : 12,
+   "numberOfInfects" : 1,
+   "timeScale" : 45,
    "minDaysInfectious": 4,
    "maxDaysInfectious": 15,
    "minDaysRecovered": 6,

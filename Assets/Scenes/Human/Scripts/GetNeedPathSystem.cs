@@ -205,7 +205,7 @@ public class GetNeedPathSystem : SystemBase
                     }
                     break;
                 case NeedType.needForVax:
-                    if (!lockdown && vaccinationPolicy)
+                    if (vaccinationPolicy)
                     {
                         result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                         result[0] = TileMapEnum.TileMapSprite.Hospital;
