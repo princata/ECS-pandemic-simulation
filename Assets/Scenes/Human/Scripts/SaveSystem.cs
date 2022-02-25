@@ -100,6 +100,18 @@ public class SaveSystem : MonoBehaviour
             totalIntensiveCounter = Interlocked.Read(ref CounterSystem.totalIntensiveCounter),
             intensiveNOVAXCounter = Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter),
             intensiveVAXCounter = Interlocked.Read(ref CounterSystem.intensiveVAXCounter),
+            totIntensiveStudent = Interlocked.Read(ref CounterSystem.totIntensiveStudent),
+            totIntensiveWorker = Interlocked.Read(ref CounterSystem.totIntensiveWorker),
+            totIntensiveRetired = Interlocked.Read(ref CounterSystem.totIntensiveRetired),
+            currentIntensive = Interlocked.Read(ref ContagionSystem.currentTotIntensive),
+            totDeathStudent = Interlocked.Read(ref CounterSystem.totDeathStudent),
+            totDeathWorker = Interlocked.Read(ref CounterSystem.totDeathWorker),
+            totDeathRetired = Interlocked.Read(ref CounterSystem.totDeathRetired),
+
+            totInfectedStudent = Interlocked.Read(ref CounterSystem.totInfectedStudent),
+            totInfectedWorker = Interlocked.Read(ref CounterSystem.totInfectedWorker),
+            totInfectedRetired = Interlocked.Read(ref CounterSystem.totInfectedRetired),
+
             totalMinutes = Datetime.total_minutes            
         };
 
@@ -132,6 +144,7 @@ public class SaveSystem : MonoBehaviour
             Interlocked.Exchange(ref CounterSystem.intensiveVAXCounter, obj.intensiveVAXCounter);
             Interlocked.Exchange(ref CounterSystem.intensiveNOVAXCounter, obj.intensiveNOVAXCounter);
             Interlocked.Exchange(ref CounterSystem.totalIntensiveCounter, obj.totalIntensiveCounter);
+            Interlocked.Exchange(ref ContagionSystem.currentTotIntensive, obj.currentIntensive);
         }
         Datetime.total_minutes = obj.totalMinutes;
     }
@@ -165,7 +178,17 @@ public class SaveCounters
     public long totalIntensiveCounter;
     public long intensiveVAXCounter;
     public long intensiveNOVAXCounter;
+    public long currentIntensive;
+    public long totInfectedRetired;
+    public long totInfectedWorker;
+    public long totInfectedStudent;
+    public long totDeathRetired;
+    public long totDeathWorker;
+    public long totDeathStudent;
+    public long totIntensiveRetired;
+    public long totIntensiveWorker;
+    public long totIntensiveStudent;
+
     public float totalMinutes;
     public bool startAppend;
-
 }

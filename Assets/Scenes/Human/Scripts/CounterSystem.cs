@@ -590,16 +590,7 @@ public class CounterSystem : SystemBase
         this.Dependency = JobHandle1;
         JobHandle1.Complete();
 
-        if (infectedCounter < 0)
-            infectedCounter = 0;
-
-        if (infectedVAXCounter < 0)
-            infectedVAXCounter = 0;
-
-        if (intensiveNOVAXCounter < 0)
-            intensiveNOVAXCounter = 0;
-        if (intensiveVAXCounter < 0)
-            intensiveVAXCounter = 0;
+        
 
         unsafe
         {
@@ -637,7 +628,20 @@ public class CounterSystem : SystemBase
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
         }
+        if (infectedCounter < 0)
+            infectedCounter = 0;
 
+        if (infectedVAXCounter < 0)
+            infectedVAXCounter = 0;
+
+        if (intensiveNOVAXCounter < 0)
+            intensiveNOVAXCounter = 0;
+        if (intensiveVAXCounter < 0)
+            intensiveVAXCounter = 0;
+        if (totalIntensiveCounter < 0)
+            totalIntensiveCounter = 0;
+        if (totalIntensiveCounter > Human.Instance.totalIntensiveCare)
+            totalIntensiveCounter = Human.Instance.totalIntensiveCare;
         //Human.Instance.totalIntensiveCare = totalIntensiveCounter;
 
         if (startAppend)
@@ -674,6 +678,8 @@ public class CounterSystem : SystemBase
                                 + Interlocked.Read(ref thirdDosesCounter) + "\t"
                                 + Interlocked.Read(ref fourthDosesCounter) + "\t"
                                 + (int)Datetime.total_minutes);
+            if(appendLog == 1)
+                appendLog = 0;
         }
 
         

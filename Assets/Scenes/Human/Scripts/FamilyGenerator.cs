@@ -59,7 +59,7 @@ public class FamilyGenerator
             {
                 int index = UnityEngine.Random.Range(0, houses.Length);
                 lastHomePosition = houses.ElementAt(index);
-                houses.RemoveAtSwapBack(index);
+                //houses.RemoveAtSwapBack(index);
             }
 
            

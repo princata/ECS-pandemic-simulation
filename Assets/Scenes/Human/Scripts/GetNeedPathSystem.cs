@@ -21,6 +21,7 @@ public class GetNeedPathSystem : SystemBase
 
     private EndSimulationEntityCommandBufferSystem ecbSystem;
     private NativeArray<Vector3Int> myHouses;
+    
     public NativeMultiHashMap<int, TileInfo> placesHashMap;
 
     protected override void OnCreate()
@@ -71,7 +72,7 @@ public class GetNeedPathSystem : SystemBase
         //Marking components as read - only helps the job scheduler execute your jobs more efficiently.
 
         JobHandle jobHandle = Entities.WithNativeDisableParallelForRestriction(randomArray).WithNativeDisableContainerSafetyRestriction(placesHM).
-            ForEach((Entity entity, int nativeThreadIndex, ref NeedPathParams needPathParams, ref HumanComponent humanComponent, ref TileComponent tileComponent, in Translation translation, in NeedComponent needComponent) =>
+            ForEach((Entity entity, int nativeThreadIndex, ref NeedPathParams needPathParams, ref HumanComponent humanComponent, ref TileComponent tileComponent ,in Translation translation, in NeedComponent needComponent) =>
         {
 
             GetXY(translation.Value, Vector3.zero, cellSize, out int startX, out int startY);
@@ -287,38 +288,58 @@ public class GetNeedPathSystem : SystemBase
                 int hashMapKey = Human.GetPositionHashMapKey(startX, startY);
                 NativeArray<int> keys = placesHM.GetKeyArray(Allocator.Temp);
                 TileInfo tileInfo;
-                NativeMultiHashMapIterator<int> nativeMultiHashMapIterator;
+                //NativeMultiHashMapIterator<int> nativeMultiHashMapIterator;
+                NativeList<TileInfo> tmpTiles = new NativeList<TileInfo>(Allocator.Temp);
+
 
                 do
                 {
-                    if (placesHM.TryGetFirstValue(hashMapKey, out tileInfo, out nativeMultiHashMapIterator))
+                    NativeMultiHashMap<int, TileInfo>.Enumerator e =  placesHM.GetValuesForKey(hashMapKey);
+                    while (e.MoveNext())
                     {
-                        do
-                        {
-                            for (int l = 0; l < result.Length && !found; l++)
-                            {
-                                if (result[l] == tileInfo.type)
-                                {
-                                    found = true;
-                                    endX = tileInfo.x;
-                                    endY = tileInfo.y;
-                                    tileComponent.currentTile = tileInfo.type;
-                                    tileComponent.currentFloor = tileInfo.floor;
-                                }
-                            }
-
-                        } while (placesHM.TryGetNextValue(out tileInfo, ref nativeMultiHashMapIterator) && !found);
+                        tmpTiles.Add(e.Current);
                     }
+               
+                    for (int l = 0; l < result.Length && !found; l++)
+                    {
+                        tileInfo = tmpTiles.ElementAt(random.NextInt(0, tmpTiles.Length));
+                        if (result[l] == tileInfo.type)
+                        {
+                            found = true;
+                            endX = tileInfo.x;
+                            endY = tileInfo.y;
+                            tileComponent.currentTile = tileInfo.type;
+                            tileComponent.currentFloor = tileInfo.floor;
+                        }
+                    }
+                    //if (placesHM.TryGetFirstValue(hashMapKey, out tileInfo, out nativeMultiHashMapIterator))
+                    //{
+                    //    do
+                    //    {
+                    //        for (int l = 0; l < result.Length && !found; l++)
+                    //        {
+                    //            if (result[l] == tileInfo.type)
+                    //            {
+                    //                found = true;
+                    //                endX = tileInfo.x;
+                    //                endY = tileInfo.y;
+                    //                tileComponent.currentTile = tileInfo.type;
+                    //                tileComponent.currentFloor = tileInfo.floor;
+                    //            }
+                    //        }
+
+                    //    } while (placesHM.TryGetNextValue(out tileInfo, ref nativeMultiHashMapIterator) && !found);
+                    //}
 
                     hashMapKey = keys[random.NextInt(0,keys.Length)];
-
+                    randomArray[nativeThreadIndex] = random;
+                    tmpTiles.Clear();
                 } while (!found);
 
                 keys.Dispose();
-
+                tmpTiles.Dispose();
             }
 
-            randomArray[nativeThreadIndex] = random;
             result.Dispose();
            
             ecb.RemoveComponent<NeedPathParams>(nativeThreadIndex, entity);
