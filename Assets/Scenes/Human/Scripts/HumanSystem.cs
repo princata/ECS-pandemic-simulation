@@ -86,9 +86,9 @@ public class HumanSystem : SystemBase
                     }
                     else
                     {
-                        hc.grocery = math.min(hc.grocery + 0.5f * deltaTime, 3 * 25 * 60);
-                        hc.sociality = math.min(hc.sociality + (1 - hc.socialResposibility) * 0.5f * deltaTime, 23 * 60); //PERCHE' 0.1f*deltTime???                   
-                        hc.sportivity = math.min(hc.sportivity + (1 - hc.socialResposibility) * 1f * deltaTime, 2 * 23 * 60);
+                        hc.grocery = math.min(hc.grocery + (1 - hc.socialResposibility) * 0.3f * deltaTime, 3 * 25 * 60);
+                        hc.sociality = math.min(hc.sociality + (1 - hc.socialResposibility) * 0.3f * deltaTime, 23 * 60); //PERCHE' 0.1f*deltTime???                   
+                        hc.sportivity = math.min(hc.sportivity + (1 - hc.socialResposibility) * 0.3f * deltaTime, 2 * 23 * 60);
                     }
                     
                     //------PROCEDIMENTO INCREMENTO CICLO VACCINALE--------------
@@ -125,7 +125,7 @@ public class HumanSystem : SystemBase
                     ic.currentImmunityLevel = 0.9f;
                     hc.immunityTime = 0f;
                 }
-                else if (hc.vaccinations > 0 && hc.need4vax > (150 * 23 * 60) - hc.immunityTime && ic.currentImmunityLevel < 0.41f) //5 mesi
+                else if (hc.vaccinations > 0 && hc.need4vax > (120 * 23 * 60) - hc.immunityTime && ic.currentImmunityLevel < 0.41f) //4 mesi
                 {
                     ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                     {

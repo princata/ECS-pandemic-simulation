@@ -17,7 +17,7 @@ public class ContagionSystem : SystemBase
     //copy of the grid, used to know where is each entity
     public NativeMultiHashMap<int, QuadrantData> quadrantMultiHashMap2;
 
-    private const float contagionThreshold = 20f; //20 minutes of close contact
+    private const float contagionThreshold = 25f; //20 minutes of close contact
     [ReadOnly]
     public long startIntensive;
 
@@ -87,21 +87,34 @@ public class ContagionSystem : SystemBase
                             if (math.distance(t.Value, myHome) < 2f) //quindi siamo nelle vicinanze di casa con i condimini o familiari  
                             {
 
-                                if (tc.currentFloor == quadrantData.currentFloor && ic.myRndValue >= 70f) //HOUSEHOLD TRANSMISSION PROBABILITY 30%  e ovviamente nello stesso piano z , CASO PLUS: visita agli amici oltre ad household
+                                if (tc.currentFloor == quadrantData.currentFloor && tc.currentTile == TileMapEnum.TileMapSprite.Home && ic.myRndValue >= 70f) //HOUSEHOLD TRANSMISSION PROBABILITY 30%  e ovviamente nello stesso piano z , CASO PLUS: visita agli amici oltre ad household
                                 {
-                                   // Debug.Log($"Household transmission with a probability of {ic.myRndValue}");
-
-
+                                  
                                     if (quadrantData.symptomatic)
                                     {
 
-                                        ic.contagionCounter += 0.15f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f) and 18%  SYMPTOMATIC TRANSMISSION RATE
+                                        ic.contagionCounter += 0.15f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f) 15& SYMPTOMATIC TRANSMISSION RATE
 
                                     }
 
                                     else
                                     {
-                                        ic.contagionCounter += 0.05f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //4%  ASYMPTOMATIC TRANSMISSION RATE                                  
+                                        ic.contagionCounter += 0.04f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //5%  ASYMPTOMATIC TRANSMISSION RATE                                  
+                                    }
+                                }
+                                else if (tc.currentFloor == quadrantData.currentFloor && tc.currentTile == TileMapEnum.TileMapSprite.OAhome && ic.myRndValue >= 65f) //OLD RETIREMENT TRANSMISSION PROBABILITY 35%  
+                                {
+                                    // Debug.Log($"Household transmission with a probability of {ic.myRndValue}");
+                                    if (quadrantData.symptomatic)
+                                    {
+
+                                        ic.contagionCounter += 0.154f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); 
+
+                                    }
+
+                                    else
+                                    {
+                                        ic.contagionCounter += 0.045f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);                                 
                                     }
                                 }
 
@@ -109,30 +122,62 @@ public class ContagionSystem : SystemBase
 
                             else if (math.distance(t.Value, myOffice) < 2f) //quindi siamo nel mio ufficio con qualcuno infetto nel mio stesso piano  
                             {
-                                if (tc.currentFloor == quadrantData.currentFloor && ic.myRndValue >= 80f) //WORKPLACE OR SCHOOL TRANSMISSION PROBABILITY 
+                                if (tc.currentFloor == quadrantData.currentFloor && tc.currentTile == TileMapEnum.TileMapSprite.Office && ic.myRndValue >= 80f) //WORKPLACE TRANSMISSION PROBABILITY 
                                 {
                                     //Debug.Log($"workplace transmission with a probability of {ic.myRndValue}");
                                     if (quadrantData.symptomatic)
                                     {
-                                        ic.contagionCounter += 0.14f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //PARAMETRO IMMUNITY -> (0.01f - 0.99f)
+                                        ic.contagionCounter += 0.13f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); 
 
                                     }
 
                                     else
                                     {
-                                        ic.contagionCounter += 0.04f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //AIC HOUSEHOLD TRANSMISSION 2%                                    
+                                        ic.contagionCounter += 0.035f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);                                   
+                                    }
+                                }
+                                else if (tc.currentFloor == quadrantData.currentFloor && tc.currentTile == TileMapEnum.TileMapSprite.School && ic.myRndValue >= 85f) //SCHOOL TRANSMISSION PROBABILITY 
+                                {
+                                    //Debug.Log($"workplace transmission with a probability of {ic.myRndValue}");
+                                    if (quadrantData.symptomatic)
+                                    {
+                                        ic.contagionCounter += 0.135f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);
+
+                                    }
+
+                                    else
+                                    {
+                                        ic.contagionCounter += 0.04f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);                                   
                                     }
                                 }
 
                             }
                             //SE NON SONO A CASA e siamo sullo stesso piano
-                            else if (quadrantData.symptomatic && tc.currentFloor == quadrantData.currentFloor && ic.myRndValue >= 70f) //caso sintomatico
+                            else if (tc.currentFloor == quadrantData.currentFloor && tc.currentTile == TileMapEnum.TileMapSprite.Park && ic.myRndValue >= 80f) //OUTDOOR TRANSMISSION PROBABILITY
                             {
-                                ic.contagionCounter += 0.13f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);
+                                if (quadrantData.symptomatic)
+                                {
+                                    ic.contagionCounter += 0.115f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); 
+
+                                }
+
+                                else
+                                {
+                                    ic.contagionCounter += 0.022f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);                                   
+                                }
                             }
-                            else if (!quadrantData.symptomatic && tc.currentFloor == quadrantData.currentFloor && ic.myRndValue >= 70f)
+                            else if (tc.currentFloor == quadrantData.currentFloor && tc.currentTile != TileMapEnum.TileMapSprite.Park && ic.myRndValue >= 70f) //INDOOR TRANSMISSION PROBABILITY
                             {
-                                ic.contagionCounter += 0.03f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);
+                                if (quadrantData.symptomatic)
+                                {
+                                    ic.contagionCounter += 0.14f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); 
+
+                                }
+
+                                else
+                                {
+                                    ic.contagionCounter += 0.04f * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel);                              
+                                }
                             }
                         }
                         //TODO we could add a cap here to speed up the check

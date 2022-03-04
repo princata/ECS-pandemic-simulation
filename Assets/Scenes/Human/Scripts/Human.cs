@@ -215,18 +215,15 @@ public class Human : MonoBehaviour
             var officePosition = Vector3Int.zero;
 
 
-            if (conf.Lockdown)
-                socialResponsability = GenerateNormalRandom(0.75f, 0.25f, 0.50f, 0.99f);
-            else
-                socialResponsability = GenerateNormalRandom(0.5f, 0.3f, 0f, 0.99f);
+           
+            socialResponsability = GenerateNormalRandom(0.5f, 0.45f, 0f, 0.99f);
 
-            if (vaccinationPolicy)
-            {
-                if (socialResponsability > 0.35f)
-                    PROvax = true;
-                else
-                    PROvax = false;
-            }
+            
+            if (socialResponsability > 0.35f)
+                PROvax = true;
+            else
+                PROvax = false;
+            
 
             if (age == HumanStatus.Student) // 5-30 age
             {
@@ -279,7 +276,7 @@ public class Human : MonoBehaviour
 
             //To add a buffer to an entity, you can use the normal methods of adding a component type onto an entity:
             entityManager.AddBuffer<PathPosition>(entity);
-            UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
+           // UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
             //human component
             entityManager.SetComponentData(entity, new HumanComponent
             {

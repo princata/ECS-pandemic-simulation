@@ -145,6 +145,16 @@ public class SaveSystem : MonoBehaviour
             Interlocked.Exchange(ref CounterSystem.intensiveNOVAXCounter, obj.intensiveNOVAXCounter);
             Interlocked.Exchange(ref CounterSystem.totalIntensiveCounter, obj.totalIntensiveCounter);
             Interlocked.Exchange(ref ContagionSystem.currentTotIntensive, obj.currentIntensive);
+
+            Interlocked.Exchange(ref CounterSystem.totInfectedRetired, obj.totInfectedRetired);
+            Interlocked.Exchange(ref CounterSystem.totInfectedWorker, obj.totInfectedWorker);
+            Interlocked.Exchange(ref CounterSystem.totInfectedStudent, obj.totInfectedStudent);
+            Interlocked.Exchange(ref CounterSystem.totDeathRetired, obj.totDeathRetired);
+            Interlocked.Exchange(ref CounterSystem.totDeathWorker, obj.totDeathWorker);
+            Interlocked.Exchange(ref CounterSystem.totDeathStudent, obj.totDeathStudent);
+            Interlocked.Exchange(ref CounterSystem.totIntensiveRetired, obj.totIntensiveRetired);
+            Interlocked.Exchange(ref CounterSystem.totIntensiveWorker, obj.totIntensiveWorker);
+            Interlocked.Exchange(ref CounterSystem.totIntensiveStudent, obj.totIntensiveStudent);
         }
         Datetime.total_minutes = obj.totalMinutes;
     }

@@ -180,9 +180,10 @@ public class GetNeedPathSystem : SystemBase
                 case NeedType.needToWork:
                     result = new NativeArray<TileMapEnum.TileMapSprite>(0, Allocator.Temp);
                     found = true;
-                    if((humanComponent.age == HumanStatusEnum.HumanStatus.Worker && humanComponent.jobEssentiality > 0.5f) || 
+                    if((humanComponent.age == HumanStatusEnum.HumanStatus.Worker && humanComponent.jobEssentiality >= 0.5f) || 
                     (humanComponent.age == HumanStatusEnum.HumanStatus.Student && !lockSchool && !lockdown) )
                     {
+                       
                         endX = humanComponent.officePosition.x;
                         endY = humanComponent.officePosition.y;
                         if(humanComponent.age == HumanStatusEnum.HumanStatus.Worker)
@@ -192,6 +193,7 @@ public class GetNeedPathSystem : SystemBase
                         }
                         else if(humanComponent.age == HumanStatusEnum.HumanStatus.Student)
                         {
+                            Debug.Log($"going to school during lockschool");
                             tileComponent.currentTile = TileMapEnum.TileMapSprite.School;
                             tileComponent.currentFloor = 0;
                         }
@@ -199,6 +201,7 @@ public class GetNeedPathSystem : SystemBase
                     }
                     else //IMPLEMENTATA LA DAD PER STUDENTI E LO SMART WORKING
                     {
+                       
                         endX = humanComponent.homePosition.x;
                         endY = humanComponent.homePosition.y;
                         tileComponent.currentTile = TileMapEnum.TileMapSprite.Home;
