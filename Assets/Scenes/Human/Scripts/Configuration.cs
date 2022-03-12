@@ -8,6 +8,7 @@ public class Configuration
     public int numberOfHumans;
     public int numberOfInfects;
     public float timeScale;
+    public float sectionSize;
     public string map;
     public float minDaysInfectious;
     public float maxDaysInfectious;
@@ -38,6 +39,7 @@ public class Configuration
     public bool LockGym { get => lockGym; set => lockGym = value; }
     public bool LockSchool { get => lockSchool; set => lockSchool = value; }
     public bool AppendLog { get => appendLog; set => appendLog = value; }
+    public float SectionSize { get => sectionSize; set => sectionSize = value; }
 
     public static Configuration CreateFromJSON()
     {

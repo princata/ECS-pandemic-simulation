@@ -30,7 +30,7 @@ public class Human : MonoBehaviour
     NativeArray<Entity> entityArray;
     public static Configuration conf;
     public bool vaccinationPolicy;
-
+   // public bool large;
     public int template1Percent;
     public int template2Percent;
     public int template3Percent;
@@ -46,11 +46,14 @@ public class Human : MonoBehaviour
 
     [SerializeField] public Material humanSpriteMaterial;
 
-    public NativeArray<Vector3Int> houses;
+    //public NativeArray<Vector3Int> houses;
+    //public NativeArray<int> NeighbourQuadrants;
     public static NativeMultiHashMap<int, TileInfo> places;
+    public static NativeMultiHashMap<int, Pathfinding.PathNode> pathFindingMap;
+    public static NativeMultiHashMap<int, Vector3Int> housesMap;
 
     public const int quadrantYMultiplier = 1000;
-    public const float quadrantCellSize = 25f;
+    public float quadrantCellSize;
     private void Awake()
     {
         Instance = this;
@@ -76,7 +79,7 @@ public class Human : MonoBehaviour
         //Extract configuration from json file
         conf = Configuration.CreateFromJSON();
         int numberOfInfects = conf.NumberOfInfects;
-        
+        quadrantCellSize = conf.SectionSize;
         float tmp = ICUproportion(conf.NumberOfHumans); //CALCOLO ICU IN BASE AI DATI VERI SULLE ICU
         this.totalIntensiveCare = Mathf.RoundToInt(tmp);
         
@@ -88,47 +91,91 @@ public class Human : MonoBehaviour
         entityArray = new NativeArray<Entity>(conf.NumberOfHumans, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
 
+        //NeighbourQuadrants = new NativeArray<int>(8, Allocator.Persistent);
+        //NeighbourQuadrants[0] = 1; // right
+        //NeighbourQuadrants[1] = 1 + quadrantYMultiplier; //right-up
+        //NeighbourQuadrants[2] = quadrantYMultiplier; //up
+        //NeighbourQuadrants[3] = quadrantYMultiplier - 1; //left up
+        //NeighbourQuadrants[4] = -1; //left
+        //NeighbourQuadrants[5] = 0 - (1 + quadrantYMultiplier); //left down
+        //NeighbourQuadrants[6] = - quadrantYMultiplier; //down
+        //NeighbourQuadrants[7] = 0 - (quadrantYMultiplier - 1); //right down
         // Get grid size
         int gridWidth = Testing.Instance.grid.GetWidth();
         int gridHeight = Testing.Instance.grid.GetHeight();
 
+       
         //initialize family generator
         famGenerator = new FamilyGenerator();
 
         templateInfo = FillTemplateData(conf.numberOfHumans);
 
         // Get houses and offices from grid
-        List<Vector3Int> housesList = new List<Vector3Int>();
+       // List<Vector3Int> housesList = new List<Vector3Int>();
+     
+        NativeMultiHashMap<int, Vector3Int> officesMap = new NativeMultiHashMap<int, Vector3Int>(gridWidth * gridHeight, Allocator.Temp);
+        NativeMultiHashMap<int, Vector3Int> schoolMap = new NativeMultiHashMap<int, Vector3Int>(gridWidth * gridHeight, Allocator.Temp);
+        housesMap = new NativeMultiHashMap<int, Vector3Int>(gridWidth * gridHeight, Allocator.Persistent);
+        housesMap.Capacity = gridWidth * gridHeight;
         List<Vector3Int> officesList = new List<Vector3Int>();
+       
         List<Vector3Int> schoolsList = new List<Vector3Int>();
         List<Vector3Int> OAhomeList = new List<Vector3Int>();
         // var mapGrid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType(); });
         var mapGrid = Testing.Instance.grid;
         places = new NativeMultiHashMap<int, TileInfo>(gridWidth * gridHeight, Allocator.Persistent);
         places.Capacity = gridWidth * gridHeight;
-        NativeMultiHashMap<int, TileInfo>.ParallelWriter places2 = places.AsParallelWriter();
+        //NativeMultiHashMap<int, TileInfo>.ParallelWriter places2 = places.AsParallelWriter();
 
+        pathFindingMap = new NativeMultiHashMap<int, Pathfinding.PathNode>(gridWidth * gridHeight, Allocator.Persistent);
+        //NativeMultiHashMap<int, Pathfinding.PathNode>.ParallelWriter pathnodehashmap = pathFindingMap.AsParallelWriter();
+        pathFindingMap.Capacity = gridWidth * gridHeight;
+     
+       
         for (int i = 0; i < gridWidth; i++)
         {
             for (int j = 0; j < gridHeight; j++)//Inserire controllo piani
             {
+
+                int hashmapkey = GetPositionHashMapKey(i, j);
+               
+                pathFindingMap.Add(hashmapkey, new Pathfinding.PathNode
+                {
+                    x = i,
+                    y = j,
+                    index = CalculateIndex(i, j, (int)quadrantCellSize),
+
+                    gCost = int.MaxValue,
+
+                    isWalkable = mapGrid.GetGridObject(i, j).IsWalkable(),
+                    cameFromNodeIndex = -1,
+
+                    //pathNodeArray[index] = pathNode
+                }); 
+
                 int f = 0;
                 string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); //conversione numero in hex
-                int hashmapkey = GetPositionHashMapKey(i, j);
+                
                 foreach (var floor in tiles) //analisi di ogni char rappresentante un piano
                 {
 
                     if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Home)
                     {
-                        housesList.Add(new Vector3Int(i, j, f++));
+                        housesMap.Add(hashmapkey,new Vector3Int(i, j, f++));
+                                            
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Office)
                     {
-                        officesList.Add(new Vector3Int(i, j, f++));
+                       
+                        officesMap.Add(hashmapkey, new Vector3Int(i,j,f++));
+                      
+                        
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.School)
                     {
-                        schoolsList.Add(new Vector3Int(i, j, f++));
+                       
+                         schoolMap.Add(hashmapkey, new Vector3Int(i, j, f++));
+                     
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.OAhome)
                     {
@@ -137,7 +184,7 @@ public class Human : MonoBehaviour
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Pub)
                     {
                         
-                        places2.Add(hashmapkey, new TileInfo
+                        places.Add(hashmapkey, new TileInfo
                         {
                             x = i,
                             y = j,
@@ -148,7 +195,7 @@ public class Human : MonoBehaviour
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Park)
                     {
                         
-                        places2.Add(hashmapkey, new TileInfo
+                        places.Add(hashmapkey, new TileInfo
                         {
                             x = i,
                             y = j,
@@ -159,7 +206,7 @@ public class Human : MonoBehaviour
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Supermarket)
                     {
                        
-                        places2.Add(hashmapkey, new TileInfo
+                        places.Add(hashmapkey, new TileInfo
                         {
                             x = i,
                             y = j,
@@ -170,7 +217,7 @@ public class Human : MonoBehaviour
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Hospital)
                     {
                        
-                        places2.Add(hashmapkey, new TileInfo
+                        places.Add(hashmapkey, new TileInfo
                         {
                             x = i,
                             y = j,
@@ -181,7 +228,7 @@ public class Human : MonoBehaviour
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Gym)
                     {
                         
-                        places2.Add(hashmapkey, new TileInfo
+                        places.Add(hashmapkey, new TileInfo
                         {
                             x = i,
                             y = j,
@@ -192,12 +239,13 @@ public class Human : MonoBehaviour
                 }
             }
         }
-        NativeArray<Vector3Int> offices = officesList.ToNativeArray<Vector3Int>(Allocator.Temp);
-        NativeArray<Vector3Int> schools = schoolsList.ToNativeArray<Vector3Int>(Allocator.Temp);
+       
+       // NativeArray<Vector3Int> offices = officesList.ToNativeArray<Vector3Int>(Allocator.Temp);
+       // NativeArray<Vector3Int> schools = schoolsList.ToNativeArray<Vector3Int>(Allocator.Temp);
         NativeArray<Vector3Int> OAhouses = OAhomeList.ToNativeArray<Vector3Int>(Allocator.Temp);
-        famGenerator.SetHouses(housesList, OAhouses);
+        famGenerator.SetHouses(housesMap, OAhouses);
         famGenerator.SetTemplateInfo(templateInfo);
-        houses = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);
+        //houses = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);
         //famGenerator.PrintTemplateDebug();
         float symptomsProbability = 0f;
         float humanDeathProbability = 0f;
@@ -213,9 +261,12 @@ public class Human : MonoBehaviour
             HumanStatus age = familyInfo.age;
             var homePosition = familyInfo.homePosition;
             var officePosition = Vector3Int.zero;
-
-
-           
+            var hashmapkeyHome = GetPositionHashMapKey(homePosition.x, homePosition.y);
+         //   Debug.Log($"entity {entity.Index} hmkHome {hashmapkeyHome} sectionkey{familyInfo.sectionKey}");
+           // var startKey = hashmapkeyHome;
+            var found = false;
+          //  var count = 0;
+            
             socialResponsability = GenerateNormalRandom(0.5f, 0.45f, 0f, 0.99f);
 
             
@@ -228,10 +279,48 @@ public class Human : MonoBehaviour
             if (age == HumanStatus.Student) // 5-30 age
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-                officePosition = (Vector3Int)schools[UnityEngine.Random.Range(0, schools.Length)];
+
+                              
+                do
+                {
+                    NativeMultiHashMap<int, Vector3Int>.Enumerator e = schoolMap.GetValuesForKey(hashmapkeyHome);
+                    while (e.MoveNext())
+                    {
+                        schoolsList.Add(e.Current);
+                    }
+                    if (schoolsList.Count <= 0)//SE NEL QUADRANTE CORRENTE NON C'E' UNA SCUOLA CERCO NEI QUADRANTI ADIACENTI
+                    {
+                       // do
+                       // {
+                          //  if(count >= NeighbourQuadrants.Length)//NON HO TROVATO NULLA NEMMENO NEI QUADRANTI ADIACENTI
+                           // {
+                        Debug.LogError($"The map is incorrectly built, no school is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
+                        UnityEditor.EditorApplication.isPlaying = false;
+                                
+                           // }
+                           // hashmapkeyHome = startKey;
+                           // hashmapkeyHome += NeighbourQuadrants[count++];
+                        //} while (schoolMap.ContainsKey(hashmapkeyHome));//QUESTO CHECK MI PERMETTE DI PRENDERE SOLO I QUADRANTI ADIACENTI VALIDI, CIOE' CHE CADONO ALL'INTERNO DELLA MAPPA
+                        
+                    }
+                    else
+                    {
+                        if(schoolsList.Count == 1)
+                            officePosition = schoolsList[0];
+                        else
+                            officePosition = schoolsList[UnityEngine.Random.Range(0, schoolsList.Count)];
+                        
+                        found = true;
+                        schoolsList.Clear();
+                    }
+
+                } while (!found);
+
+
+                
                 symptomsProbability = GenerateNormalRandom(0.2f, 0.1f, 0f, 1f) * 100; //20% sintomi
                 humanDeathProbability = GenerateNormalRandom(0.01f, 0.1f, 0.01f, 1f) * 100; //1% IFR (INFECTION FATALITY RATE)
-                if (vaccinationPolicy && PROvax)
+                if (PROvax)
                     firstDoseTime = UnityEngine.Random.Range(10f * 25f * 60f, 20f * 25f * 60f);
 
                 jobEssentiality = 1f;
@@ -240,10 +329,49 @@ public class Human : MonoBehaviour
             else if (age == HumanStatus.Worker) //30-60 age
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-                officePosition = offices[UnityEngine.Random.Range(0, offices.Length)];
+
+                do
+                {
+                    NativeMultiHashMap<int, Vector3Int>.Enumerator e = officesMap.GetValuesForKey(hashmapkeyHome);
+                    while (e.MoveNext())
+                    {
+                        officesList.Add(e.Current);
+                    }
+                    if (officesList.Count <= 0) //SE NEL QUADRANTE CORRENTE NON C'E' UN UFFICIO CERCO NEI QUADRANTI ADIACENTI
+                    {
+                      //  do
+                       // {
+                        //    if (count >= NeighbourQuadrants.Length)
+                         //   {
+                        Debug.LogError($"The map is incorrectly built, no offices is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
+                        UnityEditor.EditorApplication.isPlaying = false;
+                                
+                         //   }
+                         //   hashmapkeyHome = startKey;
+                         //   hashmapkeyHome += NeighbourQuadrants[count++];
+                       // } while (schoolMap.ContainsKey(hashmapkeyHome));
+                       
+                    }
+                    else
+                    {
+                        if(officesList.Count == 1)
+                            officePosition = officesList[0];
+                        else
+                            officePosition = officesList[UnityEngine.Random.Range(0, officesList.Count)];
+
+                        found = true;
+                        officesList.Clear();
+                    }
+
+                } while (!found);
+               // Debug.Log("entity: " + entity.Index + " office pos:" + officePosition.x + " " + officePosition.y);
+                //  }
+                //  else
+                //    officePosition = offices[UnityEngine.Random.Range(0, offices.Length)];
+
                 symptomsProbability = GenerateNormalRandom(0.30f, 0.1f, 0.25f, 1f) * 100; //30% sintomi
                 humanDeathProbability = GenerateNormalRandom(0.03f, 0.1f, 0.01f, 1f) * 100; //3% IFR (INFECTION FATALITY RATE)
-                if (vaccinationPolicy && PROvax)
+                if (PROvax)
                     firstDoseTime = UnityEngine.Random.Range(5f * 25f * 60f, 15f * 25f * 60f);
                 if (!conf.lockdown)
                     jobEssentiality = 1f;
@@ -256,11 +384,11 @@ public class Human : MonoBehaviour
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
                 symptomsProbability = GenerateNormalRandom(0.50f, 0.1f, 0.5f, 1f) * 100; //50% sintomi
                 humanDeathProbability = GenerateNormalRandom(0.10f, 0.1f, 0.1f, 1f) * 100; // 10% IFR (INFECTION FATALITY RATE)
-                if (vaccinationPolicy && PROvax)
+                if (PROvax)
                     firstDoseTime = UnityEngine.Random.Range(1f * 25f * 60f, 10f * 25f * 60f);
 
             }
-
+          
             //Vector3 position = new float3((UnityEngine.Random.Range(0, gridWidth)) * 10f + UnityEngine.Random.Range(0, 10f), (UnityEngine.Random.Range(0, gridHeight)) * 10f + UnityEngine.Random.Range(0, 10f), 0);
 
             Vector3 position = new float3(homePosition.x * 10f + UnityEngine.Random.Range(0, 10f), homePosition.y * 10f + UnityEngine.Random.Range(0, 10f), 0);
@@ -291,6 +419,7 @@ public class Human : MonoBehaviour
                 officePosition = officePosition,
                 age = familyInfo.age,
                 familyKey = familyInfo.familyKey,
+                sectionKey = familyInfo.sectionKey,
                 PROvax = PROvax,
                 need4vax = 0f,
                 firstDoseTime = firstDoseTime,
@@ -447,9 +576,10 @@ public class Human : MonoBehaviour
             });
         }
         // famGenerator.PrintTemplateDebug();
-
-        offices.Dispose();
-        schools.Dispose();
+        schoolMap.Dispose();
+        officesMap.Dispose();
+        //offices.Dispose();
+        //schools.Dispose();
         entityArray.Dispose();
         famGenerator.Disposing();
 
@@ -473,8 +603,10 @@ public class Human : MonoBehaviour
 
     private void OnDestroy()
     {
-        Instance.houses.Dispose();
+        housesMap.Dispose();
         places.Dispose();
+        //NeighbourQuadrants.Dispose();
+        pathFindingMap.Dispose();
     }
 
     public float Percent(float total, int percent)
@@ -507,6 +639,33 @@ public class Human : MonoBehaviour
 
     public static int GetPositionHashMapKey(int x, int y)
     {
-        return (int)(math.floor(x / quadrantCellSize) + (quadrantYMultiplier * math.floor(y / quadrantCellSize)));
+        return (int)(math.floor(x / conf.sectionSize) + (quadrantYMultiplier * math.floor(y / conf.sectionSize)));
+    }
+
+    public static int CalculateIndex(int x, int y, int cellsize)
+    {
+        int modX;
+        int modY;
+        int index;
+        if (x >= cellsize)
+            modX = x % cellsize;
+        else
+            modX = x;
+        if (y >= cellsize)
+            modY = y % cellsize;
+        else
+            modY = y;
+
+        if(modX >= modY)
+        {
+            index = modY * (cellsize + 1) + (modX - modY);
+        }
+        else
+        {
+            index = modY * (cellsize + 1) - (modY - modX);
+        }
+
+        return index;
+
     }
 }

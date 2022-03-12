@@ -26,5 +26,5 @@ public struct HumanComponent : IComponentData
     public int vaccinations;
     //family
     public int familyKey;
-
+    public int sectionKey;
 }

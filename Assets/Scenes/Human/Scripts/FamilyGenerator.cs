@@ -2,34 +2,39 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
+using Unity.Mathematics;
 
 public struct FamilyInfo
 {
     public int familyKey;
     public HumanStatus age;
     public Vector3Int homePosition;
+    public int sectionKey;
 }
 
 public class FamilyGenerator
 {
+    public static int currentHMK;
     public static int familyCounter = 0;
     public static int currentFamily = -1;
     public static int templateCounter = 0;
     public static int studentCounter = 0;
     public static int workerCounter = 0;
     public static int retiredCounter = 0;
+    public static int countKey = 0;
     public static Vector3Int lastHomePosition;
     public static TemplateInfo templateInfos;
-    public static NativeList<Vector3Int> houses;
+    public static NativeMultiHashMap<int,Vector3Int> houses;
+    public static NativeList<Vector3Int> localHouses;
+    public static NativeArray<int> keys;
     public static NativeArray<Vector3Int> OAhouses;
 
-    public void SetHouses(List<Vector3Int> home , NativeArray<Vector3Int> OAhome)
+    public void SetHouses(NativeMultiHashMap<int, Vector3Int> home , NativeArray<Vector3Int> OAhome)
     {
-        houses = new NativeList<Vector3Int>(home.Count,Allocator.Temp);
-        foreach (var hom in home)
-            houses.Add(hom);
-        
+        houses = home;
+        keys = houses.GetKeyArray(Allocator.Temp);
         OAhouses = OAhome;
+        localHouses = new NativeList<Vector3Int>(Allocator.Persistent);
     }
 
     public void SetTemplateInfo(TemplateInfo t)
@@ -53,12 +58,30 @@ public class FamilyGenerator
         if (currentFamily != familyCounter)
         {
             UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-            if (templateCounter == 4 && familyCounter % 2 == 0) //ogni family counter pari piazzo due anziani nelle case di riposo
-                lastHomePosition = OAhouses[Random.Range(0, OAhouses.Length)];
+            if (templateCounter == 4 && familyCounter % 2 == 0)
+            { //ogni family counter pari piazzo due anziani nelle case di riposo
+                lastHomePosition = OAhouses[UnityEngine.Random.Range(0, OAhouses.Length)];              
+            }
             else
             {
-                int index = UnityEngine.Random.Range(0, houses.Length);
-                lastHomePosition = houses.ElementAt(index);
+                
+                currentHMK = keys[UnityEngine.Random.Range(0, keys.Length-1)];
+
+                NativeMultiHashMap<int, Vector3Int>.Enumerator e = houses.GetValuesForKey(currentHMK);
+                while (e.MoveNext())
+                {
+                    localHouses.Add(e.Current); //aggiungo tutte le possibili case di quel quadrante
+                }
+                int index;
+                
+                if (localHouses.Length == 1)
+                    index = 0;
+                else
+                    index = UnityEngine.Random.Range(0, localHouses.Length);
+
+                lastHomePosition = localHouses.ElementAt(index);
+                localHouses.Clear();
+                //info.sectionKey = currentHMK;
                 //houses.RemoveAtSwapBack(index);
             }
 
@@ -102,6 +125,7 @@ public class FamilyGenerator
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
                 }
                 else if (workerCounter < 2)
                 {
@@ -110,6 +134,7 @@ public class FamilyGenerator
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
                 }
                 if (studentCounter >= 2 && workerCounter >= 2)
                 {
@@ -133,6 +158,7 @@ public class FamilyGenerator
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
                 }
                 else if (workerCounter < 2)
                 {
@@ -141,6 +167,7 @@ public class FamilyGenerator
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
                 }
                 else if (retiredCounter < 2)
                 {
@@ -149,6 +176,7 @@ public class FamilyGenerator
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
                     currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
                 }
 
                 if (studentCounter >= 1 && workerCounter >= 2 && retiredCounter >= 2)
@@ -172,6 +200,7 @@ public class FamilyGenerator
                     info.age = HumanStatus.Student;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
+                    info.sectionKey = currentHMK;
                     currentFamily = familyCounter;
                 }
                 if (studentCounter >= 3)
@@ -195,6 +224,7 @@ public class FamilyGenerator
                     info.age = HumanStatus.Worker;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
+                    info.sectionKey = currentHMK;
                     currentFamily = familyCounter;
                 }
                 if (workerCounter >= 2)
@@ -218,6 +248,7 @@ public class FamilyGenerator
                     info.age = HumanStatus.Retired;
                     info.familyKey = familyCounter;
                     info.homePosition = lastHomePosition;
+                    info.sectionKey = GetPositionHashMapKey(lastHomePosition.x, lastHomePosition.y);
                     currentFamily = familyCounter;
                 }
                 if (retiredCounter >= 2)
@@ -237,9 +268,17 @@ public class FamilyGenerator
         return info;
     }
 
+    public static int GetPositionHashMapKey(int x, int y)
+    {
+        return (int)(math.floor(x / Human.conf.sectionSize) + (Human.quadrantYMultiplier * math.floor(y / Human.conf.sectionSize)));
+    }
+
     public void Disposing()
     {
-        houses.Dispose();
+        keys.Dispose();
+
+        localHouses.Dispose();
+        //houses.Dispose();
         OAhouses.Dispose();
     }
 

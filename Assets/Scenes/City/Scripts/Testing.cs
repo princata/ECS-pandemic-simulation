@@ -2,6 +2,7 @@
 using TileMapEnum;
 using UnityEngine;
 using System.IO;
+using Unity.Mathematics;
 
 //Sort of "Main" function to create and visualize the city map
 public class Testing : MonoBehaviour
@@ -13,6 +14,7 @@ public class Testing : MonoBehaviour
     [SerializeField] private CityVisual cityVisual;
     public Grid<GridNode> grid;
 
+
     private void Awake()
     {      
         Instance = this;
@@ -22,12 +24,14 @@ public class Testing : MonoBehaviour
     //Create and visualize the Map
     private void Start()
     {
+       
+
         XmlDocument mapDocument = new XmlDocument();
         Configuration conf = Configuration.CreateFromJSON();
         var mapFileName = conf.Map;
 
         mapDocument.Load(@"./Assets/Conf/Maps/" + mapFileName);
-
+       
         // Select a single node
         XmlNode mapNode = mapDocument.SelectSingleNode("map");
         var width = int.Parse(mapNode.Attributes["width"].Value);
@@ -50,7 +54,7 @@ public class Testing : MonoBehaviour
             var values = line.Split(',');
 
             var i = 0;
-            //qui si può fare il parsing per la string
+            
             foreach (var item in values)
             {
                 if (item.Length != 0)
@@ -59,16 +63,19 @@ public class Testing : MonoBehaviour
                     {
                         //gli mettiamo la string così com'è
                         array2Dmap[curLine, i++] = item;
+                        
                     }
 
                 }
             }
             curLine--;
         }
-
+        
         //num cells x, y, size, offset, element
         grid = new Grid<GridNode>(width, height, 10f, Vector3.zero, array2Dmap, (int tileType, Grid<GridNode> grid, int x, int y) => new GridNode(tileType, grid, x, y));
         cityVisual.SetGrid(grid);
         //cameraControl.SetGrid(grid);
     }
+
+
 }

@@ -20,9 +20,10 @@ public class GetNeedPathSystem : SystemBase
     //private Unity.Mathematics.Random rnd;
 
     private EndSimulationEntityCommandBufferSystem ecbSystem;
-    private NativeArray<Vector3Int> myHouses;
     
+    //private NativeArray<int> Neighbour;
     public NativeMultiHashMap<int, TileInfo> placesHashMap;
+    public NativeMultiHashMap<int, Vector3Int> housesHMap;
 
     protected override void OnCreate()
     {
@@ -40,8 +41,9 @@ public class GetNeedPathSystem : SystemBase
         directions.CopyFrom(new int2[] { new int2(1, 0), new int2(0, -1), new int2(-1, 0), new int2(0, 1) });
         start_offset = new NativeArray<int2>(4, Allocator.Persistent);
         start_offset.CopyFrom(new int2[] { new int2(-1, 1), new int2(1, 1), new int2(1, -1), new int2(-1, -1) });
-       // rnd = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 420));
-        myHouses = Human.Instance.houses;
+        // rnd = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 420));
+        //Neighbour = Human.Instance.NeighbourQuadrants;
+        housesHMap = Human.housesMap;
         placesHashMap = Human.places;
     }
 
@@ -56,15 +58,15 @@ public class GetNeedPathSystem : SystemBase
        // var rnd = this.rnd;
         var start_offset = this.start_offset;
         var directions = this.directions;
-        
+       // var NeighbourQuadrants = Neighbour;
         var placesHM = placesHashMap;
-        var houses = myHouses;
+        var houses = housesHMap;
         var lockdown = Human.conf.Lockdown;
         var lockGym = Human.conf.lockGym;
         var lockSchool = Human.conf.lockSchool;
         var lockPubs = Human.conf.lockPubs;
         var vaccinationPolicy = Human.conf.VaccinationPolicy;
-
+      //  var large = Human.Instance.large;
         var randomArray = World.GetExistingSystem<RandomSystem>().RandomArray;
 
         //Note the use of the keywords ref and in on the parameters of the ForEach lambda function.
@@ -85,7 +87,7 @@ public class GetNeedPathSystem : SystemBase
 
             //int pos = FindTarget(startX, startY, hc.status, range, grid, width, height);
 
-            int i, j, endX = -1, endY = -1;
+            int endX = -1, endY = -1;
             bool found = false;
 
             NativeArray<TileMapEnum.TileMapSprite> result = new NativeArray<TileMapEnum.TileMapSprite>(0, Allocator.Temp);
@@ -124,23 +126,32 @@ public class GetNeedPathSystem : SystemBase
                 case NeedType.needForSociality:
                     if ((random.NextDouble() < 0.20 && !lockdown) || (random.NextDouble() < 0.5 * (1 - humanComponent.socialResposibility) && lockdown))
                     {
-                        result = new NativeArray<TileMapEnum.TileMapSprite>(0, Allocator.Temp);
+                       // result = new NativeArray<TileMapEnum.TileMapSprite>(0, Allocator.Temp);
                         found = true;
-                        int friendIndex;
-                        do
+                       
+                        Vector3Int friendHouse = new Vector3Int();
+                        NativeMultiHashMap<int, Vector3Int>.Enumerator e = houses.GetValuesForKey(humanComponent.sectionKey);
+                        int len = houses.CountValuesForKey(humanComponent.sectionKey);
+                        if (len <= 1)
+                            friendHouse = humanComponent.homePosition;
+                        else
                         {
-                            friendIndex = random.NextInt(0, houses.Length);
-                        } while (houses[friendIndex].x == humanComponent.homePosition.x && houses[friendIndex].y == humanComponent.homePosition.y && houses[friendIndex].z == humanComponent.homePosition.z); //cerco una casa di una persona fin quando non è vicino casa mia
-                        endX = houses[friendIndex].x;
-                        endY = houses[friendIndex].y;
+                            for (int k = 0; k <= random.NextInt(0, len-1); k++)
+                                e.MoveNext();
+                        }
+                        friendHouse = e.Current;
+                        //} while (houses[friendIndex].x == humanComponent.homePosition.x && houses[friendIndex].y == humanComponent.homePosition.y && houses[friendIndex].z == humanComponent.homePosition.z); //cerco una casa di una persona fin quando non è vicino casa mia
+                        endX = friendHouse.x;
+                        endY = friendHouse.y;
                         tileComponent.currentTile = TileMapEnum.TileMapSprite.Home;
-                        tileComponent.currentFloor = houses[friendIndex].z;
+                        tileComponent.currentFloor = friendHouse.z;
+                        
                     }
                     else if (!lockdown && !lockPubs)
                     {
-                        result = new NativeArray<TileMapEnum.TileMapSprite>(2, Allocator.Temp);
+                        result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                         result[0] = TileMapEnum.TileMapSprite.Pub;
-                        result[1] = TileMapEnum.TileMapSprite.Park;
+                       // result[1] = TileMapEnum.TileMapSprite.Park;
                         //tileComponent.currentTile = TileMapEnum.TileMapSprite.Pub;
                         //tileComponent.currentFloor = 0;
 
@@ -156,11 +167,11 @@ public class GetNeedPathSystem : SystemBase
 
                     break;
                 case NeedType.needForSport:
-                    result = new NativeArray<TileMapEnum.TileMapSprite>(2, Allocator.Temp);
+                    result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                     if (!lockdown && !lockGym)
                     {
                         result[0] = TileMapEnum.TileMapSprite.Gym;
-                        result[1] = TileMapEnum.TileMapSprite.Park;
+                       // result[1] = TileMapEnum.TileMapSprite.Park;
                     }
                     else
                         result[0] = TileMapEnum.TileMapSprite.Park;
@@ -193,7 +204,7 @@ public class GetNeedPathSystem : SystemBase
                         }
                         else if(humanComponent.age == HumanStatusEnum.HumanStatus.Student)
                         {
-                            Debug.Log($"going to school during lockschool");
+                           
                             tileComponent.currentTile = TileMapEnum.TileMapSprite.School;
                             tileComponent.currentFloor = 0;
                         }
@@ -247,100 +258,127 @@ public class GetNeedPathSystem : SystemBase
             }*/
 
             //TODO this could esplode... keep an eye on this
-           /* for (int range = 1; !found; range++)
-            {
-                //random number selection
-                int starting_edge = random.NextInt(0, 4);
-                int pos_step = random.NextInt(0, range * 2 + 1);
-                i = startX + start_offset[starting_edge].x * range + directions[starting_edge].x * pos_step;
-                j = startY + start_offset[starting_edge].y * range + directions[starting_edge].y * pos_step;
-                for (int turns = 0, tot_step = 0; turns < 5 && tot_step < 8 * range; turns++)
-                {
-                    //TODO random starting step?
-                    var edge = (turns + starting_edge) % 4;
-                    for (int steps = pos_step; steps < range * 2 + 1 - pos_step && !found; steps++)
-                    {
-                        i += directions[edge].x;
-                        j += directions[edge].y;
-                        if (i >= 0 && i < width && j >= 0 && j < height)
-                            for (int l = 0; l < result.Length && !found; l++)
-                            {
-                                string temp = grid[i + j * width].ToString("X"); //cerco nei piani superiori
-                                for (int k = 0; k < temp.Length && !found; k++)
-                                {
-                                    TileMapEnum.TileMapSprite tile = (TileMapEnum.TileMapSprite)int.Parse(temp[k].ToString(), System.Globalization.NumberStyles.HexNumber);
-                                    if (result[l] == tile)
-                                    {
-                                        endX = i;
-                                        endY = j;
-                                        found = true;
-                                        tileComponent.currentTile = tile;
-                                        tileComponent.currentFloor = k;
-                                    }
+            /* for (int range = 1; !found; range++)
+             {
+                 //random number selection
+                 int starting_edge = random.NextInt(0, 4);
+                 int pos_step = random.NextInt(0, range * 2 + 1);
+                 i = startX + start_offset[starting_edge].x * range + directions[starting_edge].x * pos_step;
+                 j = startY + start_offset[starting_edge].y * range + directions[starting_edge].y * pos_step;
+                 for (int turns = 0, tot_step = 0; turns < 5 && tot_step < 8 * range; turns++)
+                 {
+                     //TODO random starting step?
+                     var edge = (turns + starting_edge) % 4;
+                     for (int steps = pos_step; steps < range * 2 + 1 - pos_step && !found; steps++)
+                     {
+                         i += directions[edge].x;
+                         j += directions[edge].y;
+                         if (i >= 0 && i < width && j >= 0 && j < height)
+                             for (int l = 0; l < result.Length && !found; l++)
+                             {
+                                 string temp = grid[i + j * width].ToString("X"); //cerco nei piani superiori
+                                 for (int k = 0; k < temp.Length && !found; k++)
+                                 {
+                                     TileMapEnum.TileMapSprite tile = (TileMapEnum.TileMapSprite)int.Parse(temp[k].ToString(), System.Globalization.NumberStyles.HexNumber);
+                                     if (result[l] == tile)
+                                     {
+                                         endX = i;
+                                         endY = j;
+                                         found = true;
+                                         tileComponent.currentTile = tile;
+                                         tileComponent.currentFloor = k;
+                                     }
 
-                                }
+                                 }
 
-                            }
-                    }
-                    pos_step = 0;
-                }
-            }*/
-
+                             }
+                     }
+                     pos_step = 0;
+                 }
+             }*/
+            
             if (!found)
             {
-                int hashMapKey = Human.GetPositionHashMapKey(startX, startY);
-                NativeArray<int> keys = placesHM.GetKeyArray(Allocator.Temp);
+                
+                //  int count = 0;
+               
                 TileInfo tileInfo;
                 //NativeMultiHashMapIterator<int> nativeMultiHashMapIterator;
                 NativeList<TileInfo> tmpTiles = new NativeList<TileInfo>(Allocator.Temp);
 
 
-                do
-                {
-                    NativeMultiHashMap<int, TileInfo>.Enumerator e =  placesHM.GetValuesForKey(hashMapKey);
+                //SELEZIONE DI UNA DESTINAZIONE NELLA STESSA O NELLE ADIACENTI SEZIONI DI MAPPA DOVE SI TROVA L'UMANO
+                
+                    NativeMultiHashMap<int, TileInfo>.Enumerator e =  placesHM.GetValuesForKey(humanComponent.sectionKey);
                     while (e.MoveNext())
                     {
-                        tmpTiles.Add(e.Current);
+                       
+                        if(e.Current.type == result[0])
+                                tmpTiles.Add(e.Current);
+                    
+                        
                     }
-               
-                    for (int l = 0; l < result.Length && !found; l++)
+                    
+                    if(tmpTiles.Length <= 0 )
                     {
-                        tileInfo = tmpTiles.ElementAt(random.NextInt(0, tmpTiles.Length));
-                        if (result[l] == tileInfo.type)
-                        {
-                            found = true;
-                            endX = tileInfo.x;
-                            endY = tileInfo.y;
-                            tileComponent.currentTile = tileInfo.type;
-                            tileComponent.currentFloor = tileInfo.floor;
-                        }
+                        // do
+                        // {
+                            //   if (count >= 8)
+                            //  {
+                                Debug.LogError($"The map is incorrectly built, no destination is found. Rebuild your map, otherwise try to increase section size");
+                               
+                            // }
+                            // hashMapKey = startKey;
+                            //  hashMapKey += NeighbourQuadrants[count++];
+                        //} while (placesHM.ContainsKey(hashMapKey));
+                       
                     }
-                    //if (placesHM.TryGetFirstValue(hashMapKey, out tileInfo, out nativeMultiHashMapIterator))
-                    //{
-                    //    do
-                    //    {
-                    //        for (int l = 0; l < result.Length && !found; l++)
-                    //        {
-                    //            if (result[l] == tileInfo.type)
-                    //            {
-                    //                found = true;
-                    //                endX = tileInfo.x;
-                    //                endY = tileInfo.y;
-                    //                tileComponent.currentTile = tileInfo.type;
-                    //                tileComponent.currentFloor = tileInfo.floor;
-                    //            }
-                    //        }
 
-                    //    } while (placesHM.TryGetNextValue(out tileInfo, ref nativeMultiHashMapIterator) && !found);
-                    //}
 
-                    hashMapKey = keys[random.NextInt(0,keys.Length)];
-                    randomArray[nativeThreadIndex] = random;
-                    tmpTiles.Clear();
-                } while (!found);
+                    if (tmpTiles.Length == 1)
+                        tileInfo =tmpTiles[0];
+                    else
+                    {
+                    
+                        tileInfo = tmpTiles.ElementAt(random.NextInt(0, tmpTiles.Length));
+                    }
+                    
+                    found = true;
+                    endX = tileInfo.x;
+                    endY = tileInfo.y;
+                    tileComponent.currentTile = tileInfo.type;
+                    tileComponent.currentFloor = tileInfo.floor;
+                    tmpTiles.Dispose();
+                        
+                    
+               
 
-                keys.Dispose();
-                tmpTiles.Dispose();
+                //if (placesHM.TryGetFirstValue(hashMapKey, out tileInfo, out nativeMultiHashMapIterator))
+                //{
+                //    do
+                //    {
+                //        for (int l = 0; l < result.Length && !found; l++)
+                //        {
+                //            if (result[l] == tileInfo.type)
+                //            {
+                //                found = true;
+                //                endX = tileInfo.x;
+                //                endY = tileInfo.y;
+                //                tileComponent.currentTile = tileInfo.type;
+                //                tileComponent.currentFloor = tileInfo.floor;
+                //            }
+                //        }
+
+                //    } while (placesHM.TryGetNextValue(out tileInfo, ref nativeMultiHashMapIterator) && !found);
+                //}
+
+                //hashMapKey = keys[random.NextInt(0,keys.Length)];
+
+
+
+                randomArray[nativeThreadIndex] = random;
+
+
             }
 
             result.Dispose();
@@ -366,7 +404,10 @@ public class GetNeedPathSystem : SystemBase
         start_offset.Dispose();
 
     }
-
+    public static int GetPositionHashMapKey(int x, int y)
+    {
+        return (int)(math.floor(x / 5f) + (1000 * math.floor(y / 5f)));
+    }
     private static void GetXY(float3 worldPosition, float3 originPosition, float cellSize, out int x, out int y)
     {
         x = (int)math.floor((worldPosition - originPosition).x / cellSize);
