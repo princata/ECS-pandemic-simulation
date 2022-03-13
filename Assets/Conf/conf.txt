@@ -1,8 +1,8 @@
 {
    "appendLog": false,
-   "numberOfHumans" : 5,
+   "numberOfHumans" : 100000,
    "numberOfInfects" : 0,
-   "timeScale" : 50,
+   "timeScale" : 45,
    "sectionSize": 30,
    "minDaysInfectious": 4,
    "maxDaysInfectious": 15,

@@ -108,7 +108,7 @@ public class Pathfinding : ComponentSystem
 
         } while (e.MoveNext());
 
-        
+        e.Dispose();
 
         return PathNodeArray;
     }

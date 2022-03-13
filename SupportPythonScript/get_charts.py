@@ -18,20 +18,21 @@ from datetime import date
 pd.options.mode.chained_assignment = None  # default='warn'
 
 # Setting directories
-os.chdir(r'C:\Users\step9\OneDrive\Desktop\Esperimenti_ridotto\logs\04-03-2022 simulations\NOpolicy30d_LockPubLockGym40d')  # Set your directory!
+
+os.chdir(r'C:\Users\step9\OneDrive\Desktop\Esperimenti_ridotto\logs\04-03-2022 simulations\NOpolicy15d_lockdown50d')  # Set your directory!
 today = date.today()
-path = str(today)
-try:
-    os.mkdir(path)
-except OSError:
-    print ("Creation of the directory %s failed" % path)
-else:
-    print ("Successfully created the directory %s " % path)
-os.chdir(path)
+# path = str(today)
+# try:
+#     os.mkdir(path)
+# except OSError:
+#     print ("Creation of the directory %s failed" % path)
+# else:
+#     print ("Successfully created the directory %s " % path)
+# os.chdir(path)
 
 doublePolicy = False
 # Loading log file
-file = '..\log.txt'
+file = 'log.txt'
 df = pd.read_csv(file, sep='\t')
 
 # Generate a readable time variable - from minutes counter to day,min,sec
@@ -77,15 +78,19 @@ end_deathVAX = round(end_df['DeathVAX_pp'], 2)
 end_recVAX = round(end_df['RecoveredVAX_pp'], 2)
 x = df['Time str']
 
-fig, ax = plt.subplots(figsize=(30, 25))
 
-plt.ylabel('N of individuals', fontsize=30)
+start_date = df['Time str'].iloc[0]
+end_date = df['Time str'].iloc[-1]
+
+
+fig, ax = plt.subplots(figsize=(30, 25))
+plt.ylabel('N of individuals', fontsize=40)
 #plt.plot(x, df['TotalExposed'], label='TotalExposed')
-plt.plot(x, df['Exposed'], label='Exposed')
-plt.plot(x, df['Symptomatic'], label='Symptomatics')
-plt.plot(x, df['Asymptomatic'], label='Asymptomatics')
-plt.plot(x, df['Death'], label='Deaths')
-plt.plot(x, df['Recovered'], label='Recovered')
+plt.plot(x, df['Exposed'], label='Exposed',linewidth=4, color = 'y')
+plt.plot(x, df['Symptomatic'], label='Symptomatics', linewidth=4, color = 'r')
+plt.plot(x, df['Asymptomatic'], label='Asymptomatics',linewidth=4, color = 'm')
+plt.plot(x, df['Death'], label='Deaths',linewidth=4, color = 'k')
+plt.plot(x, df['Recovered'], label='Recovered',linewidth=4, color = 'g')
 # #VAX CURVES IF NEEDED
 # plt.plot(x, df['ExposedVAX'], label='ExposedVAX')
 # plt.plot(x, df['SymptomaticVAX'], label='SymptomaticsVAX')
@@ -96,13 +101,19 @@ plt.plot(x, df['Recovered'], label='Recovered')
 #plt.title('Make your title')
 ax.xaxis.set_major_locator(ticker.MaxNLocator(24))
 ax.tick_params(axis='x', rotation=70)
-legend = plt.legend(fontsize=20)
-ax.tick_params(axis='both', which='major', labelsize=20)
-
+legend = plt.legend(fontsize=40, bbox_to_anchor=(1.0, 1.00),handleheight =2 )
+# leg = ax.legend()
+# for line in leg.get_lines():
+#     line.set_linewidth(2)   
+ax.tick_params(axis='both', which='major', labelsize=35)
 x_vline = df.loc[df['ChangePolicies'] == 1, 'Time str'].iloc[0]  # get the date when lockdown is introduced
-
 x_vline_str = x_vline[:7]
 ax.axvline(x = x_vline, color = 'red')
+# ax.set_xticklabels(mylab)
+locs, labels = plt.xticks()  # Get the current locations and labels.
+ax.set_xlim(start_date, end_date)
+
+plt.show()
 
 
 #SCEGLIERE SE STAMPARE LE PERCENTUALI DEI VACCINATI
@@ -130,7 +141,9 @@ if(doublePolicy):
 t = plt.annotate(text, xy=(1200, 2250),  xycoords='figure pixels', fontsize=20, bbox=dict(boxstyle="square,pad=0.3", fc="yellow", ec="b", lw=2))
 
 #plt.show()
-fig.savefig(file[:-4] + '.png')
+
+fig_name = 'NOpolicy15d_lockdown50d_' + str(today) 
+fig.savefig(fig_name + '.png')
 
 
 # # Chart 2: Daily counters over time

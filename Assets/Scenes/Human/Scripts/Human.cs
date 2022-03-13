@@ -312,6 +312,7 @@ public class Human : MonoBehaviour
                         
                         found = true;
                         schoolsList.Clear();
+                        e.Dispose();
                     }
 
                 } while (!found);
@@ -361,6 +362,7 @@ public class Human : MonoBehaviour
 
                         found = true;
                         officesList.Clear();
+                        e.Dispose();
                     }
 
                 } while (!found);

@@ -13,10 +13,10 @@ public class GetNeedPathSystem : SystemBase
     private float CellSize;
     private int Width;
     private int Height;
-    private NativeArray<int> Grid;
+  //  private NativeArray<int> Grid;
 
-    private NativeArray<int2> directions;
-    private NativeArray<int2> start_offset;
+  //  private NativeArray<int2> directions;
+   // private NativeArray<int2> start_offset;
     //private Unity.Mathematics.Random rnd;
 
     private EndSimulationEntityCommandBufferSystem ecbSystem;
@@ -36,11 +36,11 @@ public class GetNeedPathSystem : SystemBase
         CellSize = Testing.Instance.grid.GetCellSize();
         Width = Testing.Instance.grid.GetWidth();
         Height = Testing.Instance.grid.GetHeight();
-        Grid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTiles(); });
-        directions = new NativeArray<int2>(4, Allocator.Persistent);
-        directions.CopyFrom(new int2[] { new int2(1, 0), new int2(0, -1), new int2(-1, 0), new int2(0, 1) });
-        start_offset = new NativeArray<int2>(4, Allocator.Persistent);
-        start_offset.CopyFrom(new int2[] { new int2(-1, 1), new int2(1, 1), new int2(1, -1), new int2(-1, -1) });
+        //Grid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTiles(); });
+      //  directions = new NativeArray<int2>(4, Allocator.Persistent);
+      //  directions.CopyFrom(new int2[] { new int2(1, 0), new int2(0, -1), new int2(-1, 0), new int2(0, 1) });
+       // start_offset = new NativeArray<int2>(4, Allocator.Persistent);
+       // start_offset.CopyFrom(new int2[] { new int2(-1, 1), new int2(1, 1), new int2(1, -1), new int2(-1, -1) });
         // rnd = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 420));
         //Neighbour = Human.Instance.NeighbourQuadrants;
         housesHMap = Human.housesMap;
@@ -54,10 +54,10 @@ public class GetNeedPathSystem : SystemBase
         var cellSize = this.CellSize;
         var height = this.Height;
         var width = this.Width;
-        var grid = this.Grid;
+       
        // var rnd = this.rnd;
-        var start_offset = this.start_offset;
-        var directions = this.directions;
+      //  var start_offset = this.start_offset;
+       // var directions = this.directions;
        // var NeighbourQuadrants = Neighbour;
         var placesHM = placesHashMap;
         var houses = housesHMap;
@@ -140,6 +140,7 @@ public class GetNeedPathSystem : SystemBase
                                 e.MoveNext();
                         }
                         friendHouse = e.Current;
+                        e.Dispose();
                         //} while (houses[friendIndex].x == humanComponent.homePosition.x && houses[friendIndex].y == humanComponent.homePosition.y && houses[friendIndex].z == humanComponent.homePosition.z); //cerco una casa di una persona fin quando non è vicino casa mia
                         endX = friendHouse.x;
                         endY = friendHouse.y;
@@ -349,7 +350,7 @@ public class GetNeedPathSystem : SystemBase
                     tileComponent.currentTile = tileInfo.type;
                     tileComponent.currentFloor = tileInfo.floor;
                     tmpTiles.Dispose();
-                        
+                    e.Dispose();    
                     
                
 
@@ -399,9 +400,9 @@ public class GetNeedPathSystem : SystemBase
 
     protected override void OnStopRunning()
     {
-        Grid.Dispose();
-        directions.Dispose();
-        start_offset.Dispose();
+        //Grid.Dispose();
+        //directions.Dispose();
+        //start_offset.Dispose();
 
     }
     public static int GetPositionHashMapKey(int x, int y)

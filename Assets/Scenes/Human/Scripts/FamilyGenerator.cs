@@ -276,7 +276,7 @@ public class FamilyGenerator
     public void Disposing()
     {
         keys.Dispose();
-
+       // houses.Dispose();
         localHouses.Dispose();
         //houses.Dispose();
         OAhouses.Dispose();
