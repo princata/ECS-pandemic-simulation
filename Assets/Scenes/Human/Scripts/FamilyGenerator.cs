@@ -27,14 +27,24 @@ public class FamilyGenerator
     public static NativeMultiHashMap<int,Vector3Int> houses;
     public static NativeList<Vector3Int> localHouses;
     public static NativeArray<int> keys;
+    public static NativeList<int> keyS;
     public static NativeArray<Vector3Int> OAhouses;
 
     public void SetHouses(NativeMultiHashMap<int, Vector3Int> home , NativeArray<Vector3Int> OAhome)
     {
         houses = home;
         keys = houses.GetKeyArray(Allocator.Temp);
+        keyS = new NativeList<int>(Allocator.Temp);
+        foreach( var key in keys)
+        {
+            if (keyS.Contains(key))
+                continue;
+            else
+                keyS.Add(key);
+        }
         OAhouses = OAhome;
         localHouses = new NativeList<Vector3Int>(Allocator.Persistent);
+        countKey = keyS[0];
     }
 
     public void SetTemplateInfo(TemplateInfo t)
@@ -64,16 +74,18 @@ public class FamilyGenerator
             }
             else
             {
-                
-                currentHMK = keys[UnityEngine.Random.Range(0, keys.Length-1)];
+                if (countKey >= keyS.Length)
+                    countKey = keyS[0]; //ricomincia il ciclo di assegnazione di ogni famiglia ad un quadrante diverso
 
+                currentHMK = keyS[countKey++];
+                
                 NativeMultiHashMap<int, Vector3Int>.Enumerator e = houses.GetValuesForKey(currentHMK);
                 while (e.MoveNext())
                 {
                     localHouses.Add(e.Current); //aggiungo tutte le possibili case di quel quadrante
                 }
                 int index;
-                
+               
                 if (localHouses.Length == 1)
                     index = 0;
                 else
@@ -276,6 +288,7 @@ public class FamilyGenerator
     public void Disposing()
     {
         keys.Dispose();
+        keyS.Dispose();
        // houses.Dispose();
         localHouses.Dispose();
         //houses.Dispose();

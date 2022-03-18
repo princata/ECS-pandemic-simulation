@@ -19,7 +19,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 # Setting directories
 
-os.chdir(r'C:\Users\step9\OneDrive\Desktop\Esperimenti_ridotto\logs\04-03-2022 simulations\NOpolicy15d_lockdown50d')  # Set your directory!
+os.chdir(r'C:/Users/step9/OneDrive/Desktop/Esperimenti/ScenarioRidotto/04-03-2022 simulations/NOpolicy30d_lockdown40d')  # Set your directory!
 today = date.today()
 # path = str(today)
 # try:
@@ -32,8 +32,11 @@ today = date.today()
 
 doublePolicy = False
 # Loading log file
+# file = 'log.txt'
 file = 'log.txt'
+
 df = pd.read_csv(file, sep='\t')
+
 
 # Generate a readable time variable - from minutes counter to day,min,sec
 df['Time'] = pd.to_timedelta(df['MinutesPassed'], unit = 'm')
@@ -41,6 +44,10 @@ df['Time'] = pd.to_timedelta(df['MinutesPassed'], unit = 'm')
 # Converting timedelta obkect in string as plt does not handle timedelta obj properly
 df['Time str'] = df['Time'].astype(str)
 df['Time str'] = df['Time str'].str[0:-3]
+
+# # Ad hoc selection of timing for comparison 1,2
+ind = df.index[df['Time str'].str[:2] ==  '41'].to_list()[0]
+df = df.iloc[:ind,:]
 
 # Daily database
 # df['day'] = df['Time str'].str[:2].astype(int)
@@ -91,30 +98,26 @@ plt.plot(x, df['Symptomatic'], label='Symptomatics', linewidth=4, color = 'r')
 plt.plot(x, df['Asymptomatic'], label='Asymptomatics',linewidth=4, color = 'm')
 plt.plot(x, df['Death'], label='Deaths',linewidth=4, color = 'k')
 plt.plot(x, df['Recovered'], label='Recovered',linewidth=4, color = 'g')
-# #VAX CURVES IF NEEDED
-# plt.plot(x, df['ExposedVAX'], label='ExposedVAX')
-# plt.plot(x, df['SymptomaticVAX'], label='SymptomaticsVAX')
-# plt.plot(x, df['AsymptomaticVAX'], label='AsymptomaticsVAX')
-# plt.plot(x, df['DeathVAX'], label='DeathsVAX')
-# plt.plot(x, df['RecoveredVAX'], label='RecoveredVAX')
+##VAX CURVES IF NEEDED
+# =============================================================================
+# plt.plot(x, df['ExposedVAX'], label='Exposed VAX',  alpha=0.5 ,linewidth=4, color = 'y')
+# plt.plot(x, df['SymptomaticVAX'], label='Symptomatics VAX', alpha=0.5,  linewidth=4, color = 'r' )
+# plt.plot(x, df['AsymptomaticVAX'], label='Asymptomatics VAX', alpha=0.5, linewidth=4, color = 'm')
+# plt.plot(x, df['DeathVAX'], label='Deaths VAX',linewidth=4,  alpha=0.5, color = 'k')
+# plt.plot(x, df['RecoveredVAX'], label='Recovered VAX',linewidth=4, alpha=0.5,  color = 'g')
+# =============================================================================
 
 #plt.title('Make your title')
 ax.xaxis.set_major_locator(ticker.MaxNLocator(24))
 ax.tick_params(axis='x', rotation=70)
-legend = plt.legend(fontsize=40, bbox_to_anchor=(1.0, 1.00),handleheight =2 )
-# leg = ax.legend()
-# for line in leg.get_lines():
-#     line.set_linewidth(2)   
+legend = plt.legend(fontsize=40, bbox_to_anchor=(1.0, 1.01),handleheight =2 )
+  
 ax.tick_params(axis='both', which='major', labelsize=35)
 x_vline = df.loc[df['ChangePolicies'] == 1, 'Time str'].iloc[0]  # get the date when lockdown is introduced
 x_vline_str = x_vline[:7]
 ax.axvline(x = x_vline, color = 'red')
-# ax.set_xticklabels(mylab)
 locs, labels = plt.xticks()  # Get the current locations and labels.
 ax.set_xlim(start_date, end_date)
-
-plt.show()
-
 
 #SCEGLIERE SE STAMPARE LE PERCENTUALI DEI VACCINATI
 text = 'End of simulation counters, percentage of total population:\nExposed: ' + str(end_ex) + '%\nSymptomatics: ' + str(end_synt) + '%\nAsymptomatic: ' + str(end_asym) + \
@@ -129,20 +132,18 @@ text = 'End of simulation counters, percentage of total population:\nExposed: ' 
 
 if(doublePolicy):
     x_vline2 = df.loc[df['ChangePolicies'] == 1, 'Time str'].iloc[1]
-    ax.axvline(x=x_vline2, color='red')
-
-
+    ax.axvline(x=x_vline2, color='red', linestyle ='-.')
 
 # plt.figtext(5,0.01,'The graph shows cumulative numbers over the simulated horizon. The red vertical line represents the introduction of the lockdown after '
 #             + x_vline_str + ' of simulation.'
 #             , fontsize  =20)
 
 
-t = plt.annotate(text, xy=(1200, 2250),  xycoords='figure pixels', fontsize=20, bbox=dict(boxstyle="square,pad=0.3", fc="yellow", ec="b", lw=2))
+# t = plt.annotate(text, xy=(1200, 2250),  xycoords='figure pixels', fontsize=20, bbox=dict(boxstyle="square,pad=0.3", fc="yellow", ec="b", lw=2))
 
 #plt.show()
 
-fig_name = 'NOpolicy15d_lockdown50d_' + str(today) 
+fig_name = 'NoPolicy30dLock10d' + str(today) 
 fig.savefig(fig_name + '.png')
 
 

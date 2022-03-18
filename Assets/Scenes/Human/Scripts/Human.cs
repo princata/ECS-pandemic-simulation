@@ -71,7 +71,7 @@ public class Human : MonoBehaviour
             typeof(MoveSpeedComponent),
             typeof(PathFollow),
             typeof(QuadrantEntity),
-            typeof(SpriteSheetAnimation_Data),
+          //  typeof(SpriteSheetAnimation_Data),
             typeof(InfectionComponent),
             typeof(TileComponent)
         );
@@ -253,6 +253,7 @@ public class Human : MonoBehaviour
         float jobEssentiality = 0f;
         float firstDoseTime = 0f;
         bool PROvax = false;
+        int oldfamily = -1;
         //TODO model social responsibility
         for (int i = 0; i < entityArray.Length; i++)
         {
@@ -262,6 +263,7 @@ public class Human : MonoBehaviour
             var homePosition = familyInfo.homePosition;
             var officePosition = Vector3Int.zero;
             var hashmapkeyHome = GetPositionHashMapKey(homePosition.x, homePosition.y);
+            var familykey = familyInfo.familyKey;
          //   Debug.Log($"entity {entity.Index} hmkHome {hashmapkeyHome} sectionkey{familyInfo.sectionKey}");
            // var startKey = hashmapkeyHome;
             var found = false;
@@ -484,10 +486,10 @@ public class Human : MonoBehaviour
             exposedThreshold = GenerateNormalRandom(mean, sigma, conf.MinDaysExposed * 60 * 24, conf.MaxDaysExposed * 60 * 24);
             exposedThreshold += Percent(exposedThreshold, UnityEngine.Random.Range(-30,10));
 
-            if (numberOfInfects > 0)
+            if (numberOfInfects > 0 && oldfamily != familykey)
             {
 
-
+                oldfamily = familykey;
                 numberOfInfects--;
 
                 //l'età influenza la probabilità di presentare sintomi

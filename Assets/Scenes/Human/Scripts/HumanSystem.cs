@@ -97,7 +97,7 @@ public class HumanSystem : SystemBase
                         if (hc.vaccinations == 0 && ic.status == Status.susceptible && ic.currentImmunityLevel < 0.41f)
                             hc.need4vax = math.min(hc.need4vax + 1f * deltaTime, hc.firstDoseTime + 60f);
                         else if (hc.vaccinations > 0 && ic.status == Status.susceptible && ic.currentImmunityLevel < 0.41f)
-                            hc.need4vax = math.min(hc.need4vax + 1f * deltaTime, (150 * 25 * 60) - hc.immunityTime); //le dosi successive si fanno dopo 5 mesi ma tenendo in considerazione il tempo di immunità                      
+                            hc.need4vax = math.min(hc.need4vax + 1f * deltaTime, (100 * 25 * 60) - hc.immunityTime); //le dosi successive si fanno dopo 5 mesi ma tenendo in considerazione il tempo di immunità                      
                     }
                 }           
         }).ScheduleParallel(Dependency);
@@ -125,7 +125,7 @@ public class HumanSystem : SystemBase
                     ic.currentImmunityLevel = 0.9f;
                     hc.immunityTime = 0f;
                 }
-                else if (hc.vaccinations > 0 && hc.need4vax > (120 * 23 * 60) - hc.immunityTime && ic.currentImmunityLevel < 0.41f) //4 mesi
+                else if (hc.vaccinations > 0 && hc.need4vax > (100 * 23 * 60) - hc.immunityTime && ic.currentImmunityLevel < 0.41f) //4 mesi
                 {
                     ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                     {
@@ -244,7 +244,7 @@ public class HumanSystem : SystemBase
             }
 
             
-            if(hc.immunityTime > 120 * 24* 60 && ic.currentImmunityLevel > 0.4f)
+            if(hc.immunityTime > 80 * 24* 60 && ic.currentImmunityLevel > 0.4f)
             {
                 ic.currentImmunityLevel = 0.39f; //dati presi da articolo tgcom protezione vaccini
                 
