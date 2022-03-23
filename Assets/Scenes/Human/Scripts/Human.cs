@@ -71,7 +71,7 @@ public class Human : MonoBehaviour
             typeof(MoveSpeedComponent),
             typeof(PathFollow),
             typeof(QuadrantEntity),
-          //  typeof(SpriteSheetAnimation_Data),
+            typeof(SpriteSheetAnimation_Data),
             typeof(InfectionComponent),
             typeof(TileComponent)
         );
