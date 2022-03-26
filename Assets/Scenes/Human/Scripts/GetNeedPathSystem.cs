@@ -21,10 +21,10 @@ public class GetNeedPathSystem : SystemBase
 
     private EndSimulationEntityCommandBufferSystem ecbSystem;
     
-    //private NativeArray<int> Neighbour;
+    private NativeArray<int> Neighbour;
     public NativeMultiHashMap<int, TileInfo> placesHashMap;
     public NativeMultiHashMap<int, Vector3Int> housesHMap;
-
+    public float sectionSize;
     protected override void OnCreate()
     {
         ecbSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
@@ -33,6 +33,7 @@ public class GetNeedPathSystem : SystemBase
 
     protected override void OnStartRunning()
     {
+        sectionSize = Human.Instance.quadrantCellSize;
         CellSize = Testing.Instance.grid.GetCellSize();
         Width = Testing.Instance.grid.GetWidth();
         Height = Testing.Instance.grid.GetHeight();
@@ -42,7 +43,7 @@ public class GetNeedPathSystem : SystemBase
        // start_offset = new NativeArray<int2>(4, Allocator.Persistent);
        // start_offset.CopyFrom(new int2[] { new int2(-1, 1), new int2(1, 1), new int2(1, -1), new int2(-1, -1) });
         // rnd = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 420));
-        //Neighbour = Human.Instance.NeighbourQuadrants;
+        Neighbour = Human.Instance.NeighbourQuadrants;
         housesHMap = Human.housesMap;
         placesHashMap = Human.places;
     }
@@ -58,7 +59,7 @@ public class GetNeedPathSystem : SystemBase
        // var rnd = this.rnd;
       //  var start_offset = this.start_offset;
        // var directions = this.directions;
-       // var NeighbourQuadrants = Neighbour;
+        var NeighbourQuadrants = Neighbour;
         var placesHM = placesHashMap;
         var houses = housesHMap;
         var lockdown = Human.conf.Lockdown;
@@ -66,6 +67,7 @@ public class GetNeedPathSystem : SystemBase
         var lockSchool = Human.conf.lockSchool;
         var lockPubs = Human.conf.lockPubs;
         var vaccinationPolicy = Human.conf.VaccinationPolicy;
+        var sectionsize = sectionSize;
       //  var large = Human.Instance.large;
         var randomArray = World.GetExistingSystem<RandomSystem>().RandomArray;
 
@@ -300,28 +302,50 @@ public class GetNeedPathSystem : SystemBase
             
             if (!found)
             {
-                
+
                 //  int count = 0;
-               
+                int hashMapKey = humanComponent.sectionKey;
+                int startKey = hashMapKey;
                 TileInfo tileInfo;
                 //NativeMultiHashMapIterator<int> nativeMultiHashMapIterator;
                 NativeList<TileInfo> tmpTiles = new NativeList<TileInfo>(Allocator.Temp);
 
 
                 //SELEZIONE DI UNA DESTINAZIONE NELLA STESSA O NELLE ADIACENTI SEZIONI DI MAPPA DOVE SI TROVA L'UMANO
-                
-                    NativeMultiHashMap<int, TileInfo>.Enumerator e =  placesHM.GetValuesForKey(humanComponent.sectionKey);
-                    while (e.MoveNext())
+                    
+                for(int i = 0; i< NeighbourQuadrants.Length; i++)
+                {
+                    if (placesHM.ContainsKey(hashMapKey))
                     {
-                       
-                        if(e.Current.type == result[0])
+                        NativeMultiHashMap<int, TileInfo>.Enumerator e = placesHM.GetValuesForKey(hashMapKey);
+                        while (e.MoveNext())
+                        {
+                            if (e.Current.type == result[0])
                                 tmpTiles.Add(e.Current);
+                        }
+                        e.Dispose();
+                        hashMapKey = startKey;
+                        hashMapKey += NeighbourQuadrants[i];
+                    }
+                    else
+                    {
+                        hashMapKey = startKey;
+                        hashMapKey += NeighbourQuadrants[i];
+                    }
+                }
+                
+                    //NativeMultiHashMap<int, TileInfo>.Enumerator e =  placesHM.GetValuesForKey(humanComponent.sectionKey);
+                    //while (e.MoveNext())
+                    //{
+                       
+                    //    if(e.Current.type == result[0])
+                    //            tmpTiles.Add(e.Current);
                     
                         
-                    }
+                    //}
                     
-                    if(tmpTiles.Length <= 0 )
-                    {
+                if(tmpTiles.Length <= 0 )
+                {
                         // do
                         // {
                             //   if (count >= 8)
@@ -333,9 +357,9 @@ public class GetNeedPathSystem : SystemBase
                             //  hashMapKey += NeighbourQuadrants[count++];
                         //} while (placesHM.ContainsKey(hashMapKey));
                        
-                    }
-
-
+                }
+                else
+                {
                     if (tmpTiles.Length == 1)
                         tileInfo =tmpTiles[0];
                     else
@@ -350,7 +374,10 @@ public class GetNeedPathSystem : SystemBase
                     tileComponent.currentTile = tileInfo.type;
                     tileComponent.currentFloor = tileInfo.floor;
                     tmpTiles.Dispose();
-                    e.Dispose();    
+
+                }
+
+                   // e.Dispose();    
                     
                
 
@@ -405,9 +432,9 @@ public class GetNeedPathSystem : SystemBase
         //start_offset.Dispose();
 
     }
-    public static int GetPositionHashMapKey(int x, int y)
+    public static int GetPositionHashMapKey(int x, int y, float size)
     {
-        return (int)(math.floor(x / 5f) + (1000 * math.floor(y / 5f)));
+        return (int)(math.floor(x / size) + (1000 * math.floor(y / size)));
     }
     private static void GetXY(float3 worldPosition, float3 originPosition, float cellSize, out int x, out int y)
     {

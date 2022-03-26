@@ -18,45 +18,46 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-
 public class Pathfinding : ComponentSystem
 {
 
     private const int MOVE_STRAIGHT_COST = 10;
     private const int MOVE_DIAGONAL_COST = 14;
+
     public NativeMultiHashMap<int, PathNode> pathNodeHashMap;
-    public int SectionSize;
+    private NativeArray<int> neighbours;
+    public int sectionSize;
+
     protected override void OnStartRunning()
     {
-        SectionSize  = (int)Human.conf.SectionSize;
+        sectionSize = (int)Human.Instance.quadrantCellSize;
         pathNodeHashMap = Human.pathFindingMap;
+        neighbours = Human.Instance.NeighbourQuadrants;
     }
+
     protected override void OnUpdate()
     {
         int gridWidth = Testing.Instance.grid.GetWidth();
         int gridHeight = Testing.Instance.grid.GetHeight();
         int2 gridSize = new int2(gridWidth, gridHeight);
+
         var pathHashMap = pathNodeHashMap;
-        var sectionSize = SectionSize;
+        var Neighbours = neighbours;
         List<FindPathJob> findPathJobList = new List<FindPathJob>();
         NativeList<JobHandle> jobHandleList = new NativeList<JobHandle>(Allocator.Temp);
-        //NativeArray<PathNode> pathNodeArray = new NativeArray<PathNode>(sectionSize*sectionSize, Allocator.TempJob);
 
-        Entities.ForEach((Entity entity, ref PathfindingParams pathfindingParams) =>
+        // NativeArray<PathNode> pathNodeArray = GetPathNodeArray();
+
+        Entities.ForEach((Entity entity, ref PathfindingParams pathfindingParams, ref HumanComponent hc) =>
         {
-            //int hmkstart = GetPositionHashMapKey(pathfindingParams.startPosition.x, pathfindingParams.startPosition.y, sectionSize);
-            //int hmkend = GetPositionHashMapKey(pathfindingParams.endPosition.x, pathfindingParams.endPosition.y, sectionSize);
-            //if ( hmkstart != hmkend)
-            //    Debug.Log($"incoerent pathfinding  {entity.Index} from ({pathfindingParams.startPosition.x},{pathfindingParams.startPosition.y}) {hmkstart} to ({pathfindingParams.endPosition.x},{pathfindingParams.endPosition.y}) {hmkend}");
 
-                //NativeArray<PathNode> tmpPathNodeArray = GetPathNodeArray(pathfindingParams.startPosition, pathNodeArray);
-
-                FindPathJob findPathJob = new FindPathJob
+            // NativeArray<PathNode> tmpPathNodeArray = new NativeArray<PathNode>(pathNodeArray, Allocator.TempJob);
+            NativeHashMap<int2, int> ListIndexes;
+            FindPathJob findPathJob = new FindPathJob
             {
-                startHMPK = GetPositionHashMapKey(pathfindingParams.startPosition.x,pathfindingParams.startPosition.y,sectionSize),
-                sectionSize = sectionSize,
                 gridSize = gridSize,
-                pathNodeArray = GetPathNodeArray(pathfindingParams.startPosition, sectionSize),
+                pathNodeArray = GetPathNodeArray(pathfindingParams.startPosition, Neighbours, out ListIndexes, hc.sectionKey),
+                Indexes = ListIndexes,
                 startPosition = pathfindingParams.startPosition,
                 endPosition = pathfindingParams.endPosition,
                 entity = entity,
@@ -73,7 +74,7 @@ public class Pathfinding : ComponentSystem
         {
             SetBufferPathJob set = new SetBufferPathJob
             {
-                sectionSize = sectionSize,
+                Indexes = findPathJob.Indexes,
                 entity = findPathJob.entity,
                 gridSize = findPathJob.gridSize,
                 pathNodeArray = findPathJob.pathNodeArray,
@@ -81,47 +82,95 @@ public class Pathfinding : ComponentSystem
                 pathFollowComponentDataFromEntity = GetComponentDataFromEntity<PathFollow>(),
                 pathPositionBufferFromEntity = GetBufferFromEntity<PathPosition>(),
             };//Schedule().Complete();//TODO Changed to Schedule, don't know if that will work
-
             JobHandle jobHandle = set.Schedule();
             jobHandle.Complete();
+            set.Indexes.Dispose(jobHandle);
             set.pathNodeArray.Dispose(jobHandle);
         }
 
         //pathNodeArray.Dispose();
     }
 
-    private NativeArray<PathNode> GetPathNodeArray(int2 start, int sectionSize)
+    private NativeList<PathNode> GetPathNodeArray(int2 start, NativeArray<int> neighbours, out NativeHashMap<int2, int> ListIndexes, int sectionKey)
     {
-        //Grid<GridNode> grid = Testing.Instance.grid;
+        Grid<GridNode> grid = Testing.Instance.grid;
 
         //int2 gridSize = new int2(grid.GetWidth(), grid.GetHeight());
-        NativeArray<PathNode> PathNodeArray = new NativeArray<PathNode>(sectionSize * sectionSize, Allocator.TempJob); ;
+        //NativeArray<PathNode> pathNodeArray = new NativeArray<PathNode>(gridSize.x * gridSize.y, Allocator.TempJob);
 
-        int hashMapKeyStart = Human.GetPositionHashMapKey(start.x, start.y);
-        
-            
-        NativeMultiHashMap<int, PathNode>.Enumerator e = pathNodeHashMap.GetValuesForKey(hashMapKeyStart);
-        do
+
+        NativeList<PathNode> pathNodeArray = new NativeList<PathNode>(Allocator.TempJob);
+        ListIndexes = new NativeHashMap<int2, int>(sectionSize*sectionSize*9, Allocator.TempJob);
+        int hashMapKeyStart = sectionKey;
+        int currentHMK = hashMapKeyStart;
+        int index = 0;
+       // int i = 0;
+
+        for(int j = 0; j< neighbours.Length; j++)
         {
-            PathNode pathNode = e.Current;
-            PathNodeArray[pathNode.index] = pathNode;
+            if (pathNodeHashMap.ContainsKey(currentHMK))
+            {
+                NativeMultiHashMap<int, PathNode>.Enumerator e = pathNodeHashMap.GetValuesForKey(currentHMK);
+                while (e.MoveNext())
+                {
+                    PathNode pathNode = e.Current;
+                    pathNode.index = index;
+                   
+                    ListIndexes.Add(new int2(pathNode.x, pathNode.y), index++);
+                    pathNodeArray.Add(pathNode);
 
-        } while (e.MoveNext());
+                }
+                e.Dispose();
+                currentHMK = hashMapKeyStart;
+                currentHMK += neighbours[j];
+            }
+            else
+            {
+                currentHMK = hashMapKeyStart;
+                currentHMK += neighbours[j];
+            }
+        }
 
-        e.Dispose();
+        //do
+        //{
+        //    if (pathNodeHashMap.ContainsKey(currentHMK))
+        //    {
+        //        NativeMultiHashMap<int, PathNode>.Enumerator e = pathNodeHashMap.GetValuesForKey(currentHMK);
+        //        do
+        //        {
+        //            PathNode pathNode = e.Current;
+        //            pathNode.index = index;
+        //            if (ListIndexes.ContainsKey(new int2(pathNode.x, pathNode.y)))
+        //                Debug.Log($"item already added");
+        //           // {
+        //                ListIndexes.Add(new int2(pathNode.x, pathNode.y), index++);
+        //                pathNodeArray.Add(pathNode);
 
-        return PathNodeArray;
+        //          //  }
+
+        //        } while (e.MoveNext());
+
+        //    }
+        //    currentHMK = hashMapKeyStart;
+        //    currentHMK += neighbours[i++];
+
+        //} while (i < neighbours.Length);
+
+        //METTERE NEL PATH NODE LIST TUTTI I QUADRANTI ADIACENTI E INDICIZZARLI CON UNA HASHMAP DI INDICI
+
+        return pathNodeArray;
     }
 
 
     [BurstCompile]
     private struct SetBufferPathJob : IJob
     {
-        public int sectionSize;
+
         public int2 gridSize;
 
-       // [DeallocateOnJobCompletion]
-        public NativeArray<PathNode> pathNodeArray;
+        public NativeList<PathNode> pathNodeArray;
+
+        public NativeHashMap<int2, int> Indexes;
 
         public Entity entity;
 
@@ -135,8 +184,12 @@ public class Pathfinding : ComponentSystem
             pathPositionBuffer.Clear();
 
             PathfindingParams pathfindingParams = pathfindingParamsComponentDataFromEntity[entity];
-            int endNodeIndex = CalculateIndex(pathfindingParams.endPosition.x, pathfindingParams.endPosition.y, sectionSize);
+            //int endNodeIndex = CalculateIndex(pathfindingParams.endPosition.x, pathfindingParams.endPosition.y, gridSize.x);
+            Indexes.TryGetValue(new int2(pathfindingParams.endPosition.x, pathfindingParams.endPosition.y), out int endNodeIndex);
+
             PathNode endNode = pathNodeArray[endNodeIndex];
+           
+          
             if (endNode.cameFromNodeIndex == -1)
             {
                 // Didn't find a path!
@@ -158,12 +211,10 @@ public class Pathfinding : ComponentSystem
     [BurstCompile]
     private struct FindPathJob : IJob
     {
-        public int sectionSize;
-        public int startHMPK;
-        public int2 gridSize;
-      
-        public NativeArray<PathNode> pathNodeArray;
 
+        public int2 gridSize;
+        public NativeList<PathNode> pathNodeArray;
+        public NativeHashMap<int2, int> Indexes;
         public int2 startPosition;
         public int2 endPosition;
 
@@ -179,6 +230,9 @@ public class Pathfinding : ComponentSystem
                 pathNode.hCost = CalculateDistanceCost(new int2(pathNode.x, pathNode.y), endPosition);
                 pathNode.cameFromNodeIndex = -1;
 
+                Indexes.TryGetValue(new int2(pathNode.x, pathNode.y), out int index);
+                if (index != i)
+                    Debug.Log($"index:{index} e i:{i} x={pathNode.x}, y={pathNode.y}");
                 pathNodeArray[i] = pathNode;
             }
 
@@ -192,9 +246,11 @@ public class Pathfinding : ComponentSystem
             neighbourOffsetArray[6] = new int2(+1, -1); // Right Down
             neighbourOffsetArray[7] = new int2(+1, +1); // Right Up
 
-            int endNodeIndex = CalculateIndex(endPosition.x, endPosition.y, sectionSize);
+            //int endNodeIndex = CalculateIndex(endPosition.x, endPosition.y, gridSize.x);
+            Indexes.TryGetValue(new int2(endPosition.x, endPosition.y), out int endNodeIndex);
+            Indexes.TryGetValue(new int2(startPosition.x, startPosition.y), out int startNodeI);
 
-            PathNode startNode = pathNodeArray[CalculateIndex(startPosition.x, startPosition.y, sectionSize)];
+            PathNode startNode = pathNodeArray[startNodeI];
             startNode.gCost = 0;
             startNode.CalculateFCost();
             pathNodeArray[startNode.index] = startNode;
@@ -232,14 +288,16 @@ public class Pathfinding : ComponentSystem
                     int2 neighbourOffset = neighbourOffsetArray[i];
                     int2 neighbourPosition = new int2(currentNode.x + neighbourOffset.x, currentNode.y + neighbourOffset.y);
 
-                    if (!IsPositionInsideSection(neighbourPosition, startHMPK,sectionSize, gridSize))
+                   
+                    if (!IsPositionInsideGrid(neighbourPosition, gridSize) && !Indexes.ContainsKey(new int2(neighbourPosition.x, neighbourPosition.y)))
                     {
                         // Neighbour not valid position
                         //Debug.Log("Neighbour not valid position!");
                         continue;
                     }
 
-                    int neighbourNodeIndex = CalculateIndex(neighbourPosition.x, neighbourPosition.y, sectionSize);
+                    //int neighbourNodeIndex = CalculateIndex(neighbourPosition.x, neighbourPosition.y, gridSize.x);
+                    Indexes.TryGetValue(new int2(neighbourPosition.x, neighbourPosition.y), out int neighbourNodeIndex);
 
                     if (closedList.Contains(neighbourNodeIndex))
                     {
@@ -319,6 +377,7 @@ public class Pathfinding : ComponentSystem
                 PathNode cameFromNode = pathNodeArray[currentNode.cameFromNodeIndex];
                 pathPositionBuffer.Add(new PathPosition { position = new int2(cameFromNode.x, cameFromNode.y) });
                 currentNode = cameFromNode;
+               
             }
         }
     }
@@ -348,54 +407,18 @@ public class Pathfinding : ComponentSystem
         }
     }
 
-    private static bool IsPositionInsideSection(int2 neighbourPosition, int hmk, int cellSize, int2 gridSize)
+    private static bool IsPositionInsideGrid(int2 gridPosition, int2 gridSize)
     {
-        if (neighbourPosition.x >= 0 &&
-        neighbourPosition.y >= 0 &&
-        neighbourPosition.x < gridSize.x &&
-        neighbourPosition.y < gridSize.y)
-        {
-            if (GetPositionHashMapKey(neighbourPosition.x, neighbourPosition.y, cellSize) == hmk)
-                return true;
-            else
-                return false;
-
-        }
-        else
-            return false;
-        
+        return
+            gridPosition.x >= 0 &&
+            gridPosition.y >= 0 &&
+            gridPosition.x < gridSize.x &&
+            gridPosition.y < gridSize.y;
     }
 
-    public static int CalculateIndex(int x, int y, int cellsize)
+    private static int CalculateIndex(int x, int y, int gridWidth)
     {
-        int modX;
-        int modY;
-        int index;
-        if (x >= cellsize)
-            modX = x % cellsize;
-        else
-            modX = x;
-        if (y >= cellsize)
-            modY = y % cellsize;
-        else
-            modY = y;
-
-        if (modX >= modY)
-        {
-            index = modY * (cellsize + 1) + (modX - modY);
-        }
-        else
-        {
-            index = modY * (cellsize + 1) - (modY - modX);
-        }
-
-        return index;
-
-    }
-
-    public static int GetPositionHashMapKey(int x, int y, int cellSize)
-    {
-        return (int)(math.floor(x / cellSize) + (1000 * math.floor(y / cellSize)));
+        return x + y * gridWidth;
     }
 
     private static int CalculateDistanceCost(int2 aPosition, int2 bPosition)

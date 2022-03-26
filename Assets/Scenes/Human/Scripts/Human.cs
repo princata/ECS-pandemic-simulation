@@ -47,7 +47,7 @@ public class Human : MonoBehaviour
     [SerializeField] public Material humanSpriteMaterial;
 
     //public NativeArray<Vector3Int> houses;
-    //public NativeArray<int> NeighbourQuadrants;
+    public NativeArray<int> NeighbourQuadrants;
     public static NativeMultiHashMap<int, TileInfo> places;
     public static NativeMultiHashMap<int, Pathfinding.PathNode> pathFindingMap;
     public static NativeMultiHashMap<int, Vector3Int> housesMap;
@@ -91,15 +91,15 @@ public class Human : MonoBehaviour
         entityArray = new NativeArray<Entity>(conf.NumberOfHumans, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
 
-        //NeighbourQuadrants = new NativeArray<int>(8, Allocator.Persistent);
-        //NeighbourQuadrants[0] = 1; // right
-        //NeighbourQuadrants[1] = 1 + quadrantYMultiplier; //right-up
-        //NeighbourQuadrants[2] = quadrantYMultiplier; //up
-        //NeighbourQuadrants[3] = quadrantYMultiplier - 1; //left up
-        //NeighbourQuadrants[4] = -1; //left
-        //NeighbourQuadrants[5] = 0 - (1 + quadrantYMultiplier); //left down
-        //NeighbourQuadrants[6] = - quadrantYMultiplier; //down
-        //NeighbourQuadrants[7] = 0 - (quadrantYMultiplier - 1); //right down
+        NeighbourQuadrants = new NativeArray<int>(8, Allocator.Persistent);
+        NeighbourQuadrants[0] = 1; // right
+        NeighbourQuadrants[1] = 1 + quadrantYMultiplier; //right-up
+        NeighbourQuadrants[2] = quadrantYMultiplier; //up
+        NeighbourQuadrants[3] = quadrantYMultiplier - 1; //left up
+        NeighbourQuadrants[4] = -1; //left
+        NeighbourQuadrants[5] = 0 - (1 + quadrantYMultiplier); //left down
+        NeighbourQuadrants[6] = -quadrantYMultiplier; //down
+        NeighbourQuadrants[7] = 0 - (quadrantYMultiplier - 1); //right down
         // Get grid size
         int gridWidth = Testing.Instance.grid.GetWidth();
         int gridHeight = Testing.Instance.grid.GetHeight();
@@ -143,7 +143,7 @@ public class Human : MonoBehaviour
                 {
                     x = i,
                     y = j,
-                    index = CalculateIndex(i, j, (int)quadrantCellSize),
+                    //index = CalculateIndex(i, j, (int)quadrantCellSize),
 
                     gCost = int.MaxValue,
 
@@ -265,14 +265,14 @@ public class Human : MonoBehaviour
             var hashmapkeyHome = GetPositionHashMapKey(homePosition.x, homePosition.y);
             var familykey = familyInfo.familyKey;
          //   Debug.Log($"entity {entity.Index} hmkHome {hashmapkeyHome} sectionkey{familyInfo.sectionKey}");
-           // var startKey = hashmapkeyHome;
-            var found = false;
-          //  var count = 0;
+            var startKey = hashmapkeyHome;
+            //var found = false;
+            //var count = 0;
             
             socialResponsability = GenerateNormalRandom(0.5f, 0.45f, 0f, 0.99f);
 
             
-            if (socialResponsability > 0.35f)
+            if (socialResponsability > 0.12f)
                 PROvax = true;
             else
                 PROvax = false;
@@ -281,46 +281,44 @@ public class Human : MonoBehaviour
             if (age == HumanStatus.Student) // 5-30 age
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-
-                              
-                do
+                
+                for (int l = 0; l < NeighbourQuadrants.Length; l++)
                 {
-                    NativeMultiHashMap<int, Vector3Int>.Enumerator e = schoolMap.GetValuesForKey(hashmapkeyHome);
-                    while (e.MoveNext())
+                    if (schoolMap.ContainsKey(hashmapkeyHome))//QUESTO CHECK MI PERMETTE DI PRENDERE SOLO I QUADRANTI ADIACENTI VALIDI, CIOE' CHE CADONO ALL'INTERNO DELLA MAPPA
                     {
-                        schoolsList.Add(e.Current);
-                    }
-                    if (schoolsList.Count <= 0)//SE NEL QUADRANTE CORRENTE NON C'E' UNA SCUOLA CERCO NEI QUADRANTI ADIACENTI
-                    {
-                       // do
-                       // {
-                          //  if(count >= NeighbourQuadrants.Length)//NON HO TROVATO NULLA NEMMENO NEI QUADRANTI ADIACENTI
-                           // {
-                        Debug.LogError($"The map is incorrectly built, no school is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
-                        UnityEditor.EditorApplication.isPlaying = false;
-                                
-                           // }
-                           // hashmapkeyHome = startKey;
-                           // hashmapkeyHome += NeighbourQuadrants[count++];
-                        //} while (schoolMap.ContainsKey(hashmapkeyHome));//QUESTO CHECK MI PERMETTE DI PRENDERE SOLO I QUADRANTI ADIACENTI VALIDI, CIOE' CHE CADONO ALL'INTERNO DELLA MAPPA
-                        
+                        NativeMultiHashMap<int, Vector3Int>.Enumerator e = schoolMap.GetValuesForKey(hashmapkeyHome);
+                        while (e.MoveNext())
+                        {
+                            schoolsList.Add(e.Current);
+                        }
+                        e.Dispose();
+                        hashmapkeyHome = startKey;
+                        hashmapkeyHome += NeighbourQuadrants[l];
                     }
                     else
                     {
-                        if(schoolsList.Count == 1)
-                            officePosition = schoolsList[0];
-                        else
-                            officePosition = schoolsList[UnityEngine.Random.Range(0, schoolsList.Count)];
-                        
-                        found = true;
-                        schoolsList.Clear();
-                        e.Dispose();
+                        hashmapkeyHome = startKey;
+                        hashmapkeyHome += NeighbourQuadrants[l];
                     }
-
-                } while (!found);
-
-
+                }
                 
+
+                if (schoolsList.Count <= 0)//NON HO TROVATO NULLA 
+                {
+                    Debug.LogError($"The map is incorrectly built, no office is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
+                    UnityEditor.EditorApplication.isPlaying = false;
+
+                }
+                else
+                {
+                    if (schoolsList.Count == 1)
+                        officePosition = schoolsList[0];
+                    else
+                        officePosition = schoolsList[UnityEngine.Random.Range(0, schoolsList.Count)];
+                        
+                   schoolsList.Clear();
+                }
+                                  
                 symptomsProbability = GenerateNormalRandom(0.2f, 0.1f, 0f, 1f) * 100; //20% sintomi
                 humanDeathProbability = GenerateNormalRandom(0.01f, 0.1f, 0.01f, 1f) * 100; //1% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
@@ -329,45 +327,46 @@ public class Human : MonoBehaviour
                 jobEssentiality = 1f;
 
             }
+
             else if (age == HumanStatus.Worker) //30-60 age
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
 
-                do
+                for (int l = 0; l < NeighbourQuadrants.Length; l++)
                 {
-                    NativeMultiHashMap<int, Vector3Int>.Enumerator e = officesMap.GetValuesForKey(hashmapkeyHome);
-                    while (e.MoveNext())
+                    if (officesMap.ContainsKey(hashmapkeyHome))//QUESTO CHECK MI PERMETTE DI PRENDERE SOLO I QUADRANTI ADIACENTI VALIDI, CIOE' CHE CADONO ALL'INTERNO DELLA MAPPA
                     {
-                        officesList.Add(e.Current);
-                    }
-                    if (officesList.Count <= 0) //SE NEL QUADRANTE CORRENTE NON C'E' UN UFFICIO CERCO NEI QUADRANTI ADIACENTI
-                    {
-                      //  do
-                       // {
-                        //    if (count >= NeighbourQuadrants.Length)
-                         //   {
-                        Debug.LogError($"The map is incorrectly built, no offices is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
-                        UnityEditor.EditorApplication.isPlaying = false;
-                                
-                         //   }
-                         //   hashmapkeyHome = startKey;
-                         //   hashmapkeyHome += NeighbourQuadrants[count++];
-                       // } while (schoolMap.ContainsKey(hashmapkeyHome));
-                       
+                        NativeMultiHashMap<int, Vector3Int>.Enumerator e = officesMap.GetValuesForKey(hashmapkeyHome);
+                        while (e.MoveNext())
+                        {
+                            officesList.Add(e.Current);
+                        }
+                        e.Dispose();
+                        hashmapkeyHome = startKey;
+                        hashmapkeyHome += NeighbourQuadrants[l];
                     }
                     else
                     {
-                        if(officesList.Count == 1)
-                            officePosition = officesList[0];
-                        else
-                            officePosition = officesList[UnityEngine.Random.Range(0, officesList.Count)];
-
-                        found = true;
-                        officesList.Clear();
-                        e.Dispose();
+                        hashmapkeyHome = startKey;
+                        hashmapkeyHome += NeighbourQuadrants[l];
                     }
+                }
+                if (officesList.Count <= 0)//NON HO TROVATO NULLA 
+                {
+                    Debug.LogError($"The map is incorrectly built, no school is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
+                    UnityEditor.EditorApplication.isPlaying = false;
 
-                } while (!found);
+                }
+                else
+                {
+                    if (officesList.Count == 1)
+                        officePosition = officesList[0];
+                    else
+                        officePosition = officesList[UnityEngine.Random.Range(0, officesList.Count)];
+                       
+                    officesList.Clear();
+                }
+           
                // Debug.Log("entity: " + entity.Index + " office pos:" + officePosition.x + " " + officePosition.y);
                 //  }
                 //  else
@@ -609,7 +608,7 @@ public class Human : MonoBehaviour
     {
         housesMap.Dispose();
         places.Dispose();
-        //NeighbourQuadrants.Dispose();
+        NeighbourQuadrants.Dispose();
         pathFindingMap.Dispose();
     }
 
