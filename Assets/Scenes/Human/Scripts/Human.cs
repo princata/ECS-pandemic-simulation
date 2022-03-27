@@ -30,7 +30,8 @@ public class Human : MonoBehaviour
     NativeArray<Entity> entityArray;
     public static Configuration conf;
     public bool vaccinationPolicy;
-   // public bool large;
+    public bool heatmap;
+  
     public int template1Percent;
     public int template2Percent;
     public int template3Percent;
@@ -43,7 +44,7 @@ public class Human : MonoBehaviour
     [SerializeField] public Mesh mesh;
     [SerializeField] public Material healthyMaterial;
     [SerializeField] public Material sickMaterial;
-
+    [SerializeField] public Material heatmapMaterial;
     [SerializeField] public Material humanSpriteMaterial;
 
     //public NativeArray<Vector3Int> houses;
@@ -82,8 +83,8 @@ public class Human : MonoBehaviour
         quadrantCellSize = conf.SectionSize;
         float tmp = ICUproportion(conf.NumberOfHumans); //CALCOLO ICU IN BASE AI DATI VERI SULLE ICU
         this.totalIntensiveCare = Mathf.RoundToInt(tmp);
-        
 
+        heatmap = conf.heatmap;
         vaccinationPolicy = conf.VaccinationPolicy;
         //Time Scale
         Time.timeScale = conf.TimeScale; //DA PARAMETRIZZARE
@@ -520,10 +521,19 @@ public class Human : MonoBehaviour
                 //graphics
                 float uvOffsetY = 0.0f;
                 SpriteSheetAnimation_Data spriteSheetAnimationData;
-                spriteSheetAnimationData.uv = new Vector4(uvWidth, uvHeight, uvOffsetX, uvOffsetY);
-                spriteSheetAnimationData.matrix = Matrix4x4.TRS(position, Quaternion.identity, Vector3.one);
+                if (!heatmap)
+                {
+                    spriteSheetAnimationData.uv = new Vector4(uvWidth, uvHeight, uvOffsetX, uvOffsetY);
+                    spriteSheetAnimationData.matrix = Matrix4x4.TRS(position, Quaternion.identity, Vector3.one);
+                }
+                else
+                {
+                    spriteSheetAnimationData.uv = new Vector4(1f, 1f, 1f, uvOffsetY);
+                    spriteSheetAnimationData.matrix = Matrix4x4.TRS(position, Quaternion.identity,new Vector3(10f,10f));
+                }
+
                 //quadrant
-                entityManager.SetComponentData(entity, new QuadrantEntity { typeEnum = QuadrantEntity.TypeEnum.exposed });
+                entityManager.SetComponentData(entity, new QuadrantEntity { typeEnum = QuadrantEntity.TypeEnum.infectious });
 
             }
             else

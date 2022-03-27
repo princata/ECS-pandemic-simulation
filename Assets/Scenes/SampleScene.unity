@@ -1306,6 +1306,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vaccinationPolicy: 0
+  heatmap: 0
   template1Percent: 30
   template2Percent: 20
   template3Percent: 20
@@ -1315,6 +1316,7 @@ MonoBehaviour:
   mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   healthyMaterial: {fileID: 2100000, guid: 000be1e6ffb23984fb6888e9f7c35c60, type: 2}
   sickMaterial: {fileID: 2100000, guid: 07bf6051b368b9f42ba9c3179a9b5e5e, type: 2}
+  heatmapMaterial: {fileID: 2100000, guid: 0e3abff2588dc443db43afbd0e7b4cae, type: 2}
   humanSpriteMaterial: {fileID: 2100000, guid: e62b9306892a77e4dbf33d900c175b34, type: 2}
   quadrantCellSize: 0
 --- !u!4 &1321962832

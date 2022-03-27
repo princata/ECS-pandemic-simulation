@@ -5,6 +5,7 @@ using UnityEngine;
 public class Configuration 
 {
     public bool appendLog; //volontà di appendere le statistiche quindi intenzione di fare una load
+    public bool heatmap;
     public int numberOfHumans;
     public int numberOfInfects;
     public float timeScale;
@@ -40,6 +41,7 @@ public class Configuration
     public bool LockSchool { get => lockSchool; set => lockSchool = value; }
     public bool AppendLog { get => appendLog; set => appendLog = value; }
     public float SectionSize { get => sectionSize; set => sectionSize = value; }
+    public bool Heatmap { get => heatmap; set => heatmap = value; }
 
     public static Configuration CreateFromJSON()
     {

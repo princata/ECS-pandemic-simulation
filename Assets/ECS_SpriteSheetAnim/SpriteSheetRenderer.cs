@@ -46,6 +46,7 @@ public class SpriteSheetRenderer : ComponentSystem
         }
     }
 
+    
 
     [BurstCompile]
     private struct CullAndSortNativeQueueJob : IJobForEachWithEntity<Translation, SpriteSheetAnimation_Data>
@@ -207,6 +208,7 @@ public class SpriteSheetRenderer : ComponentSystem
     private Mesh mesh;
     private Material material;
     private int shaderMainTexUVid;
+    private bool heatmap;
 
     private void InitDrawMeshInstancedSlicedData()
     {
@@ -216,7 +218,11 @@ public class SpriteSheetRenderer : ComponentSystem
         materialPropertyBlock = new MaterialPropertyBlock();
         shaderMainTexUVid = Shader.PropertyToID("_MainTex_UV");
         mesh = Human.Instance.mesh;
-        material = Human.Instance.humanSpriteMaterial;
+        heatmap = Human.Instance.heatmap;
+        if(heatmap)
+            material = Human.Instance.heatmapMaterial;
+        else
+            material = Human.Instance.humanSpriteMaterial;
     }
 
     private const int POSITION_SLICES = 20;
@@ -225,6 +231,7 @@ public class SpriteSheetRenderer : ComponentSystem
     private NativeArray<JobHandle> jobHandleArray;
     private NativeArray<RenderData>[] nativeArrayArray;
     private PositionComparer positionComparer;
+
 
     protected override void OnCreate()
     {
