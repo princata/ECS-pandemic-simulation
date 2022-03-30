@@ -244,7 +244,7 @@ public class Human : MonoBehaviour
        // NativeArray<Vector3Int> offices = officesList.ToNativeArray<Vector3Int>(Allocator.Temp);
        // NativeArray<Vector3Int> schools = schoolsList.ToNativeArray<Vector3Int>(Allocator.Temp);
         NativeArray<Vector3Int> OAhouses = OAhomeList.ToNativeArray<Vector3Int>(Allocator.Temp);
-        famGenerator.SetHouses(housesMap, OAhouses);
+        famGenerator.SetHouses(housesMap, OAhouses, numberOfInfects);
         famGenerator.SetTemplateInfo(templateInfo);
         //houses = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);
         //famGenerator.PrintTemplateDebug();
@@ -261,6 +261,9 @@ public class Human : MonoBehaviour
             Entity entity = entityArray[i];
             FamilyInfo familyInfo = famGenerator.GetFamilyAndAgeDetail();
             HumanStatus age = familyInfo.age;
+            
+            float speed = AgentFeatures.GetSpeedForAgeComfortable(AgentFeatures.GetAgentAge(), AgentFeatures.GetAgentGender());
+
             var homePosition = familyInfo.homePosition;
             var officePosition = Vector3Int.zero;
             var hashmapkeyHome = GetPositionHashMapKey(homePosition.x, homePosition.y);
@@ -273,7 +276,7 @@ public class Human : MonoBehaviour
             socialResponsability = GenerateNormalRandom(0.5f, 0.45f, 0f, 0.99f);
 
             
-            if (socialResponsability > 0.12f)
+            if (socialResponsability > 0.40f)//SECONDO VACCINAZIONI GOVERNO ITALIANO
                 PROvax = true;
             else
                 PROvax = false;
@@ -377,10 +380,8 @@ public class Human : MonoBehaviour
                 humanDeathProbability = GenerateNormalRandom(0.03f, 0.1f, 0.01f, 1f) * 100; //3% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
                     firstDoseTime = UnityEngine.Random.Range(5f * 25f * 60f, 15f * 25f * 60f);
-                if (!conf.lockdown)
-                    jobEssentiality = 1f;
-                else
-                    jobEssentiality = GenerateNormalRandom(0.2f, 0.5f, 0f, 1f);
+               
+                jobEssentiality = GenerateNormalRandom(0.7f, 0.3f, 0f, 1f); //percentuale lavoratori da remoto 30%
 
             }
             else if (age == HumanStatus.Retired) // 60-90 age
@@ -491,7 +492,7 @@ public class Human : MonoBehaviour
 
                 oldfamily = familykey;
                 numberOfInfects--;
-
+                Debug.Log($"symptomatic in section: {startKey}");
                 //l'età influenza la probabilità di presentare sintomi
 
                 entityManager.SetComponentData(entity, new InfectionComponent
@@ -529,7 +530,7 @@ public class Human : MonoBehaviour
                 else
                 {
                     spriteSheetAnimationData.uv = new Vector4(1f, 1f, 1f, uvOffsetY);
-                    spriteSheetAnimationData.matrix = Matrix4x4.TRS(position, Quaternion.identity,new Vector3(10f,10f));
+                    spriteSheetAnimationData.matrix = Matrix4x4.TRS(position, Quaternion.identity,new Vector3(20f,20f));
                 }
 
                 //quadrant
@@ -574,7 +575,7 @@ public class Human : MonoBehaviour
 
 
             //speed
-            entityManager.SetComponentData(entity, new MoveSpeedComponent { moveSpeedY = UnityEngine.Random.Range(0.5f, 2f), moveSpeedX = UnityEngine.Random.Range(0.5f, 2f), });
+            entityManager.SetComponentData(entity, new MoveSpeedComponent { moveSpeedY = speed, moveSpeedX = speed, });
 
             //initial position
             entityManager.SetComponentData(entity, new Translation

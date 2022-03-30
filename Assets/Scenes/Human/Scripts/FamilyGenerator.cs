@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 using Unity.Mathematics;
+using System;
 
 public struct FamilyInfo
 {
@@ -14,6 +15,7 @@ public struct FamilyInfo
 
 public class FamilyGenerator
 {
+    public static int numberofInfects;
     public static int currentHMK;
     public static int familyCounter = 0;
     public static int currentFamily = -1;
@@ -29,8 +31,9 @@ public class FamilyGenerator
     public static NativeArray<int> keys;
     public static NativeList<int> keyS;
     public static NativeArray<Vector3Int> OAhouses;
+    public static List<int> extractedKey;
 
-    public void SetHouses(NativeMultiHashMap<int, Vector3Int> home , NativeArray<Vector3Int> OAhome)
+    public void SetHouses(NativeMultiHashMap<int, Vector3Int> home , NativeArray<Vector3Int> OAhome, int infects)
     {
         houses = home;
         keys = houses.GetKeyArray(Allocator.Temp);
@@ -44,7 +47,9 @@ public class FamilyGenerator
         }
         OAhouses = OAhome;
         localHouses = new NativeList<Vector3Int>(Allocator.Persistent);
-        countKey = keyS[0];
+        extractedKey = new List<int>();
+        extractedKey.Clear();
+        numberofInfects = infects;
     }
 
     public void SetTemplateInfo(TemplateInfo t)
@@ -74,10 +79,26 @@ public class FamilyGenerator
             }
             else
             {
-                if (countKey >= keyS.Length)
-                    countKey = keyS[0]; //ricomincia il ciclo di assegnazione di ogni famiglia ad un quadrante diverso
+                
+                if(numberofInfects > 0) //DISTRIBUZIONE DEGLI INFETTI IN SEZIONI DIVERSE
+                {
+                    bool flag = true;
 
-                currentHMK = keyS[countKey++];
+                    while (flag)
+                    {
+                        countKey = UnityEngine.Random.Range(0, keyS.Length - 1);
+                        if (!extractedKey.Contains(countKey))
+                            flag = false;
+                    }
+                    
+                    extractedKey.Add(countKey);
+                    numberofInfects--;
+                }
+                else
+                {
+                    countKey = UnityEngine.Random.Range(0, keyS.Length - 1);
+                }
+                currentHMK = keyS[countKey];
                 
                 NativeMultiHashMap<int, Vector3Int>.Enumerator e = houses.GetValuesForKey(currentHMK);
                 while (e.MoveNext())
@@ -293,6 +314,7 @@ public class FamilyGenerator
         localHouses.Dispose();
         //houses.Dispose();
         OAhouses.Dispose();
+     
     }
 
 }
