@@ -6,12 +6,14 @@ using System.Threading;
 
 public class SaveSystem : MonoBehaviour
 {
+    public int maxDoses;
     //ReferencedUnityObjects g;
     Data dataHold;
     object[] sc;
 
     private void Start()
     {
+        maxDoses = Human.conf.maxDoses;
         dataHold = new Data();
        // g = ScriptableObject.CreateInstance<ReferencedUnityObjects>();
     }
@@ -93,10 +95,6 @@ public class SaveSystem : MonoBehaviour
             deathCounter = Interlocked.Read(ref CounterSystem.deathCounter),
             deathVAXCounter = Interlocked.Read(ref CounterSystem.deathVAXCounter),
             populationCounter = Interlocked.Read(ref CounterSystem.populationCounter),
-            firstDosesCounter = Interlocked.Read(ref CounterSystem.firstDosesCounter),
-            secondDosesCounter = Interlocked.Read(ref CounterSystem.secondDosesCounter),
-            thirdDosesCounter = Interlocked.Read(ref CounterSystem.thirdDosesCounter),
-            fourthDosesCounter = Interlocked.Read(ref CounterSystem.fourthDosesCounter),
             totalIntensiveCounter = Interlocked.Read(ref CounterSystem.totalIntensiveCounter),
             intensiveNOVAXCounter = Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter),
             intensiveVAXCounter = Interlocked.Read(ref CounterSystem.intensiveVAXCounter),
@@ -107,13 +105,16 @@ public class SaveSystem : MonoBehaviour
             totDeathStudent = Interlocked.Read(ref CounterSystem.totDeathStudent),
             totDeathWorker = Interlocked.Read(ref CounterSystem.totDeathWorker),
             totDeathRetired = Interlocked.Read(ref CounterSystem.totDeathRetired),
-
             totInfectedStudent = Interlocked.Read(ref CounterSystem.totInfectedStudent),
             totInfectedWorker = Interlocked.Read(ref CounterSystem.totInfectedWorker),
             totInfectedRetired = Interlocked.Read(ref CounterSystem.totInfectedRetired),
 
             totalMinutes = Datetime.total_minutes            
         };
+
+        obj.dosesCounter = new long[maxDoses];
+        for (int i = 0; i < maxDoses; i++)
+            obj.dosesCounter[i] = Interlocked.Read(ref CounterSystem.dosesCounter[i]);
 
 
         return obj;
@@ -137,15 +138,10 @@ public class SaveSystem : MonoBehaviour
             Interlocked.Exchange(ref CounterSystem.deathCounter, obj.deathCounter);
             Interlocked.Exchange(ref CounterSystem.deathVAXCounter, obj.deathVAXCounter);
             Interlocked.Exchange(ref CounterSystem.populationCounter, obj.populationCounter);
-            Interlocked.Exchange(ref CounterSystem.firstDosesCounter, obj.firstDosesCounter);
-            Interlocked.Exchange(ref CounterSystem.secondDosesCounter, obj.secondDosesCounter);
-            Interlocked.Exchange(ref CounterSystem.thirdDosesCounter, obj.thirdDosesCounter);
-            Interlocked.Exchange(ref CounterSystem.fourthDosesCounter, obj.fourthDosesCounter);
             Interlocked.Exchange(ref CounterSystem.intensiveVAXCounter, obj.intensiveVAXCounter);
             Interlocked.Exchange(ref CounterSystem.intensiveNOVAXCounter, obj.intensiveNOVAXCounter);
             Interlocked.Exchange(ref CounterSystem.totalIntensiveCounter, obj.totalIntensiveCounter);
             Interlocked.Exchange(ref ContagionSystem.currentTotIntensive, obj.currentIntensive);
-
             Interlocked.Exchange(ref CounterSystem.totInfectedRetired, obj.totInfectedRetired);
             Interlocked.Exchange(ref CounterSystem.totInfectedWorker, obj.totInfectedWorker);
             Interlocked.Exchange(ref CounterSystem.totInfectedStudent, obj.totInfectedStudent);
@@ -155,6 +151,8 @@ public class SaveSystem : MonoBehaviour
             Interlocked.Exchange(ref CounterSystem.totIntensiveRetired, obj.totIntensiveRetired);
             Interlocked.Exchange(ref CounterSystem.totIntensiveWorker, obj.totIntensiveWorker);
             Interlocked.Exchange(ref CounterSystem.totIntensiveStudent, obj.totIntensiveStudent);
+            for (int j = 0; j < maxDoses; j++)
+                Interlocked.Exchange(ref CounterSystem.dosesCounter[j], obj.dosesCounter[j]);
         }
         Datetime.total_minutes = obj.totalMinutes;
     }
@@ -181,10 +179,7 @@ public class SaveCounters
     public long deathCounter;
     public long deathVAXCounter;
     public long populationCounter;
-    public long firstDosesCounter;
-    public long secondDosesCounter;
-    public long thirdDosesCounter;
-    public long fourthDosesCounter;
+    public long[] dosesCounter;
     public long totalIntensiveCounter;
     public long intensiveVAXCounter;
     public long intensiveNOVAXCounter;

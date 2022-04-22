@@ -16,6 +16,9 @@ public class CounterSystem : SystemBase
     Configuration conf;
     EndInitializationEntityCommandBufferSystem m_EndSimulationEcbSystem;
 
+    [ReadOnly]
+    public int maxDoses;
+
     public static long infectedCounter;
     public static long infectedVAXCounter;
     public static long totalInfectedCounter;
@@ -41,10 +44,8 @@ public class CounterSystem : SystemBase
     public static long totDeathStudent;
 
     public static long populationCounter;
-    public static long firstDosesCounter;
-    public static long secondDosesCounter;
-    public static long thirdDosesCounter;
-    public static long fourthDosesCounter;
+    
+    public static long[] dosesCounter;
 
     public static long totalIntensiveCounter;
     public static long intensiveVAXCounter;
@@ -64,7 +65,7 @@ public class CounterSystem : SystemBase
         conf = Configuration.CreateFromJSON();
         m_EndSimulationEcbSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
         appendLog = Convert.ToInt32(conf.appendLog);
-        infectedCounter = conf.NumberOfInfects;
+        infectedCounter = conf.numberOfInfects;
         infectedVAXCounter = 0;
         symptomaticCounter = 0;
         asymptomaticCounter = 0;
@@ -74,8 +75,10 @@ public class CounterSystem : SystemBase
         recoveredVAXCounter = 0;
         deathCounter = 0;
         deathVAXCounter = 0;
-        populationCounter = conf.NumberOfHumans;
-        firstDosesCounter = 0;
+        populationCounter = conf.numberOfHumans;
+        dosesCounter = new long[maxDoses];
+        for (int l = 0; l < maxDoses; l++)
+            dosesCounter[l] = 0;
         intensiveNOVAXCounter = 0;
         intensiveVAXCounter = 0;
         totalIntensiveCounter = 0;
@@ -94,9 +97,17 @@ public class CounterSystem : SystemBase
         if (!conf.appendLog)
         {
             startAppend = true;
-            writer.WriteLine("ChangePolicies\tPopulation\tExposed\tExposedVAX\tTotalExposed\tSymptomatic\tSymptomaticVAX\tAsymptomatic\tAsymptomaticVAX\t" +
+            var columns = "ChangePolicies\tPopulation\tExposed\tExposedVAX\tTotalExposed\tSymptomatic\tSymptomaticVAX\tAsymptomatic\tAsymptomaticVAX\t" +
                 "TotInfectedRetired\tTotInfectedWorker\tTotInfectedStudent\tDeath\tDeathVAX\tTotDeathRetired\tTotDeathWorker\tTotDeathStudent\tRecovered\tRecoveredVAX\tTotalRecovered\t" +
-                "IntensiveCare\tIntensiveCareVAX\tTotalIntensive\tTotIntensiveRetired\tTotIntensiveWorker\tTotIntensiveStudent\tFirstDoses\tSecondDoses\tThirdDoses\tFourthDoses\tMinutesPassed");
+                "IntensiveCare\tIntensiveCareVAX\tTotalIntensive\tTotIntensiveRetired\tTotIntensiveWorker\tTotIntensiveStudent\t";
+            for(int s = 1; s<= maxDoses; s++)
+            {
+                columns = columns + s.ToString() + "Doses\t"; 
+            }
+            columns += "MinutesPassed";
+            writer.WriteLine(columns);
+
+
         }
         else
             startAppend = false; //che diventa true appena faccio load
@@ -105,12 +116,14 @@ public class CounterSystem : SystemBase
 
     protected override void OnStartRunning()
     {
+        maxDoses = conf.maxDoses;
         //totalIntensiveCounter = Human.Instance.totalIntensiveCare;
     }
     protected override void OnUpdate()
     {
         var ecb = m_EndSimulationEcbSystem.CreateCommandBuffer().ToConcurrent();
         var vaccinationPolicy = Human.Instance.vaccinationPolicy;
+        var maxDose = maxDoses;
         //if(totalIntensiveCounter > Human.Instance.totalIntensiveCare)
          //   totalIntensiveCounter = Human.Instance.totalIntensiveCare;
 
@@ -170,17 +183,9 @@ public class CounterSystem : SystemBase
         NativeArray<long> localTotalRecoveredCounter = new NativeArray<long>(1, Allocator.TempJob);
         localTotalRecoveredCounter[0] = 0;
 
-        NativeArray<long> localFirstDosesCounter = new NativeArray<long>(1, Allocator.TempJob);
-        localFirstDosesCounter[0] = 0;
-
-        NativeArray<long> localSecondDosesCounter = new NativeArray<long>(1, Allocator.TempJob);
-        localSecondDosesCounter[0] = 0;
-
-        NativeArray<long> localThirdDosesCounter = new NativeArray<long>(1, Allocator.TempJob);
-        localThirdDosesCounter[0] = 0;
-
-        NativeArray<long> localFourthDosesCounter = new NativeArray<long>(1, Allocator.TempJob);
-        localFourthDosesCounter[0] = 0;
+        NativeArray<long> localDosesCounter = new NativeArray<long>(maxDose, Allocator.TempJob);
+        for(int i=0;i<maxDose;i++)
+            localDosesCounter[i] = 0;
 
         NativeArray<long> localIntensiveVAXCounter = new NativeArray<long>(1, Allocator.TempJob);
         localIntensiveVAXCounter[0] = 0;
@@ -542,44 +547,20 @@ public class CounterSystem : SystemBase
             }
 
             //---------INSERIMENTO COUNTERS VACCINI------------
-            if (vaccinationPolicy && humanComponent.PROvax && ic.doses < 4)
+            if (vaccinationPolicy && humanComponent.PROvax && ic.doses < maxDose)
             {
-                if (humanComponent.vaccinations == 1 && ic.doses == 0)
+                for(int j = 1; j<= maxDose; j++)
                 {
-                    unsafe
+                    if (humanComponent.vaccinations == j && ic.doses == j-1)
                     {
-                        Interlocked.Increment(ref ((long*)localFirstDosesCounter.GetUnsafePtr())[0]);
+                        unsafe
+                        {
+                            Interlocked.Increment(ref ((long*)localDosesCounter.GetUnsafePtr())[j-1]);
+                        }
+                        ic.doses = j;
                     }
-                    ic.doses = 1;
                 }
-                else if (humanComponent.vaccinations == 2 && ic.doses == 1)
-                {
-                    unsafe
-                    {
-                        Interlocked.Increment(ref ((long*)localSecondDosesCounter.GetUnsafePtr())[0]);
-                    }
-
-                    ic.doses = 2;
-                }
-                else if (humanComponent.vaccinations == 3 && ic.doses == 2)
-                {
-                    unsafe
-                    {
-                        Interlocked.Increment(ref ((long*)localThirdDosesCounter.GetUnsafePtr())[0]);
-                    }
-
-                    ic.doses = 3;
-                }
-                else if (humanComponent.vaccinations == 4 && ic.doses == 3)
-                {
-                    unsafe
-                    {
-                        Interlocked.Increment(ref ((long*)localFourthDosesCounter.GetUnsafePtr())[0]);
-                    }
-
-                    ic.doses = 4;
-                }
-
+                
 
             }
 
@@ -608,10 +589,6 @@ public class CounterSystem : SystemBase
             Interlocked.Add(ref deathVAXCounter, Interlocked.Read(ref ((long*)localDeathVAXCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref populationCounter, -Interlocked.Read(ref ((long*)localDeathCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref populationCounter, -Interlocked.Read(ref ((long*)localDeathVAXCounter.GetUnsafePtr())[0]));
-            Interlocked.Add(ref firstDosesCounter, Interlocked.Read(ref ((long*)localFirstDosesCounter.GetUnsafePtr())[0]));
-            Interlocked.Add(ref secondDosesCounter, Interlocked.Read(ref ((long*)localSecondDosesCounter.GetUnsafePtr())[0]));
-            Interlocked.Add(ref thirdDosesCounter, Interlocked.Read(ref ((long*)localThirdDosesCounter.GetUnsafePtr())[0]));
-            Interlocked.Add(ref fourthDosesCounter, Interlocked.Read(ref ((long*)localFourthDosesCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveVAXCounter, Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref intensiveNOVAXCounter, Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
             Interlocked.Add(ref totalIntensiveCounter, Interlocked.Read(ref ((long*)localTotalIntensiveCounter.GetUnsafePtr())[0]));
@@ -628,6 +605,14 @@ public class CounterSystem : SystemBase
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
         }
+        for(int k = 0; k < maxDose; k++)
+        {
+            unsafe
+            {
+                Interlocked.Add(ref dosesCounter[k], Interlocked.Read(ref ((long*)localDosesCounter.GetUnsafePtr())[k]));
+            }
+        }
+
         if (infectedCounter < 0)
             infectedCounter = 0;
 
@@ -672,12 +657,12 @@ public class CounterSystem : SystemBase
                                 + Interlocked.Read(ref totalIntensiveCounter) + "\t"
                                 + Interlocked.Read(ref totIntensiveRetired) + "\t"
                                 + Interlocked.Read(ref totIntensiveWorker) + "\t"
-                                + Interlocked.Read(ref totIntensiveStudent) + "\t"
-                                + Interlocked.Read(ref firstDosesCounter) + "\t"
-                                + Interlocked.Read(ref secondDosesCounter) + "\t"
-                                + Interlocked.Read(ref thirdDosesCounter) + "\t"
-                                + Interlocked.Read(ref fourthDosesCounter) + "\t"
-                                + (int)Datetime.total_minutes);
+                                + Interlocked.Read(ref totIntensiveStudent) + "\t");
+            for (int d = 0; d < maxDose; d++)
+                writer.WriteLine(Interlocked.Read(ref dosesCounter[d]) + "\t");
+
+            writer.WriteLine((int)Datetime.total_minutes);
+
             if(appendLog == 1)
                 appendLog = 0;
         }
@@ -695,10 +680,7 @@ public class CounterSystem : SystemBase
         localRecoveredVAXCounter.Dispose();
         localTotalRecoveredCounter.Dispose();
         localDeathCounter.Dispose();
-        localFirstDosesCounter.Dispose();
-        localSecondDosesCounter.Dispose();
-        localThirdDosesCounter.Dispose();
-        localFourthDosesCounter.Dispose();
+        localDosesCounter.Dispose();
         localDeathVAXCounter.Dispose();
         localAsymptomaticVAXCounter.Dispose();
         localSymptomaticVAXCounter.Dispose();

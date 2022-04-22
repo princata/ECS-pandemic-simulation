@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Configuration 
 {
-    public bool appendLog; //volontà di appendere le statistiche quindi intenzione di fare una load
+    public bool appendLog; 
     public bool heatmap;
     public int numberOfHumans;
     public int numberOfInfects;
@@ -22,26 +22,61 @@ public class Configuration
     public bool lockGym;
     public bool lockSchool;
     public bool lockPubs;
+    public float malePercentage;
+    public int[] inputAge;
+    public bool randomSocResp;
+    public float socialResponsibility;
+    public float noVaxPercentage;
+    public int icu4100k;
+    public float symptomsStudent;
+    public float ifrStudent;
+    public float symptomsWorker;
+    public float ifrWorker;
+    public float symptomsRetired;
+    public float ifrRetired;
+    public int minDaysFDTstudent;
+    public int maxDaysFDTstudent;
+    public int minDaysFDTworker;
+    public int maxDaysFDTworker;
+    public int minDaysFDTretired;
+    public int maxDaysFDTretired;
+    public float exposureTime;
+    public float contagionDistance;
+    public float protectionRecovered;
+    public float protectionVaccinated;
+    public float householdTRs;
+    public float householdTRa;
+    public float workplaceTRs;
+    public float workplaceTRa;
+    public float retirehouseTRs;
+    public float retirehouseTRa;
+    public float outdoorTRs;
+    public float outdoorTRa;
+    public float indoorTRs;
+    public float indoorTRa;
+    public float schoolTRs;
+    public float schoolTRa;
+    public float eatingOutProb;
+    public float visitFriendProbNL;
+    public float visitFriendProbL;
+    public float remoteWorkerPercent;
+    public int maxDoses;
+    public int daysBTWdoses;
+    public float protectionAfterImmunity;
+    public int daysOfImmunity;
+    public float hungerOnset;
+    public float hungerDuration;
+    public float fatigueDuration;
+    public float sociabilityOnset;
+    public float sociabilityDuration;
+    public float sportmanshipOnset;
+    public float sportmanshipDuration;
+    public float groceryOnset;
+    public float groceryDuration;
+    public float workDuration;
 
     // TextAsset text = new TextAsset(File.ReadAllText("./Assets/Conf/conf.txt"));
 
-    public int NumberOfHumans { get => numberOfHumans; set => numberOfHumans = value; }
-    public int NumberOfInfects { get => numberOfInfects; set => numberOfInfects = value; }
-    public float TimeScale { get => timeScale; set => timeScale = value; }
-    public string Map { get => map; set => map = value; }
-    public float MinDaysInfectious { get => minDaysInfectious; set => minDaysInfectious = value; }
-    public float MaxDaysInfectious { get => maxDaysInfectious; set => maxDaysInfectious = value; }
-    public float MinDaysRecovered { get => minDaysRecovered; set => minDaysRecovered = value; }
-    public float MaxDaysRecovered { get => maxDaysRecovered; set => maxDaysRecovered = value; }
-    public float MinDaysExposed { get => minDaysExposed; set => minDaysExposed = value; }
-    public float MaxDaysExposed { get => maxDaysExposed; set => maxDaysExposed = value; }
-    public bool Lockdown { get => lockdown; set => lockdown = value; }
-    public bool VaccinationPolicy { get => vaccinationPolicy; set => vaccinationPolicy = value; }
-    public bool LockGym { get => lockGym; set => lockGym = value; }
-    public bool LockSchool { get => lockSchool; set => lockSchool = value; }
-    public bool AppendLog { get => appendLog; set => appendLog = value; }
-    public float SectionSize { get => sectionSize; set => sectionSize = value; }
-    public bool Heatmap { get => heatmap; set => heatmap = value; }
 
     public static Configuration CreateFromJSON()
     {

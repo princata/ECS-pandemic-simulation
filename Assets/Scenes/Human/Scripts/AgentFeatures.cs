@@ -17,11 +17,7 @@ public static class AgentFeatures
 
     private static float[] menComfortable = new float[] { 1.393f, 1.458f, 1.462f, 1.393f, 1.359f, 1.330f };
     private static float[] womenComfortable = new float[] { 1.407f, 1.415f, 1.391f, 1.395f, 1.296f, 1.272f };
-
-    private static float[] menMaximum = new float[] { 2.533f, 2.456f, 2.462f, 2.069f, 1.933f, 2.079f }; //currently unused, these are maximum speeds in a hurry
-    private static float[] womenMaximum = new float[] { 2.467f, 2.342f, 2.123f, 2.010f, 1.774f, 1.749f }; //currently unused, these are maximum speeds in a hurry
-
-    private const float malePopulationPercentage = 0.4777f;
+    private static float malePopulationPercentage = Human.conf.malePercentage;
 
     public enum AgentGender
     {
@@ -31,10 +27,10 @@ public static class AgentFeatures
         Any
     }
 
-    public static int GetAgentAge()
+    public static int GetAgentAge(int[] inputAge)
     {
         //returns agent age according to age distribution in Turin
-        UnityLoadedDice loadedDie = new UnityLoadedDice(new int[] { 39, 42, 41, 41, 43, 52, 58, 63, 75, 81, 79, 69, 61, 58, 56, 55, 44, 29, 11, 03 });
+        UnityLoadedDice loadedDie = new UnityLoadedDice(inputAge);
 
         int index = loadedDie.NextValue();
         return UnityEngine.Random.Range(minAge[index], maxAge[index]);
@@ -44,6 +40,7 @@ public static class AgentFeatures
     public static AgentGender GetAgentGender()
     {
         float maleFemale = UnityEngine.Random.Range(0.0f, 1.0f);
+        malePopulationPercentage = malePopulationPercentage / 100f;
         if (maleFemale <= malePopulationPercentage)
         {
             return AgentGender.Male;

@@ -28,7 +28,7 @@ public class Testing : MonoBehaviour
 
         XmlDocument mapDocument = new XmlDocument();
         Configuration conf = Configuration.CreateFromJSON();
-        var mapFileName = conf.Map;
+        var mapFileName = conf.map;
 
         mapDocument.Load(@"./Assets/Conf/Maps/" + mapFileName);
        

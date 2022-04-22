@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class Counters : MonoBehaviour
 {
-
+    public int maxDoses;
     public Text ExposedText;
     public Text ExposedVAXText;
     public Text SymptomaticText;
@@ -46,6 +46,7 @@ public class Counters : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        maxDoses = Human.conf.maxDoses;
         SymptomaticCounterText = SymptomaticText;
         AsymptomaticCounterText = AsymptomaticText;
         SymptomaticVAXCounterText = SymptomaticVAXText;
@@ -80,10 +81,12 @@ public class Counters : MonoBehaviour
         long asyVAX = Interlocked.Read(ref CounterSystem.asymptomaticVAXCounter);
         long rec = Interlocked.Read(ref CounterSystem.recoveredCounter);
         long recVAX = Interlocked.Read(ref CounterSystem.recoveredVAXCounter);
-        long first = Interlocked.Read(ref CounterSystem.firstDosesCounter);
-        long sec = Interlocked.Read(ref CounterSystem.secondDosesCounter);
-        long third = Interlocked.Read(ref CounterSystem.thirdDosesCounter);
-        long fourth = Interlocked.Read(ref CounterSystem.fourthDosesCounter);
+        long[] doses = new long[maxDoses];
+        
+        for(int i = 0; i<maxDoses;i++)
+            doses[i] = Interlocked.Read(ref CounterSystem.dosesCounter[i]);
+       
+         
 
         SymptomaticCounterText.text = "Symptomatic: " + sym + "        " + string.Format("{0:0.00}", Percentage(population,sym)) + "%" ;
         SymptomaticVAXCounterText.text = "Symptomatic: " + symVAX + "       " + string.Format("{0:0.00}", Percentage(population, symVAX)) + "%";
@@ -96,10 +99,30 @@ public class Counters : MonoBehaviour
         AsymptomaticVAXCounterText.text = "Asynthomatic: " + asyVAX + "        " + string.Format("{0:0.00}", Percentage(population, asyVAX)) + "%";
         RecoveredCounterText.text = "Recovered: " + rec + "        " + string.Format("{0:0.00}", Percentage(population, rec)) + "%";
         RecoveredVAXCounterText.text = "Recovered: " + recVAX + "        " + string.Format("{0:0.00}", Percentage(population, recVAX)) + "%";
-        FirstDosesCounterText.text = "1st Doses: " + first + "    " + string.Format("{0:0.00}", Percentage(population, first)) + "%";
-        SecondDosesCounterText.text = "2nd Doses: " + sec + "    " + string.Format("{0:0.00}", Percentage(population, sec)) + "%";
-        ThirdDosesCounterText.text = "3rd Doses: " + third + "    " + string.Format("{0:0.00}", Percentage(population, third)) + "%";
-        FourthDosesCounterText.text = "4th Doses: " + fourth + "    " + string.Format("{0:0.00}", Percentage(population, fourth)) + "%";
+        switch (maxDoses)//need to implement more text game object if the max number of doses inserted is greater than four
+        {
+            case 1: 
+                FirstDosesCounterText.text = "1st Doses: " + doses[0] + "    " + string.Format("{0:0.00}", Percentage(population, doses[0])) + "%";
+                break;
+            case 2:
+                FirstDosesCounterText.text = "1st Doses: " + doses[0] + "    " + string.Format("{0:0.00}", Percentage(population, doses[0])) + "%";
+                SecondDosesCounterText.text = "2nd Doses: " + doses[1] + "    " + string.Format("{0:0.00}", Percentage(population, doses[1])) + "%";
+                break;
+            case 3:
+                FirstDosesCounterText.text = "1st Doses: " + doses[0] + "    " + string.Format("{0:0.00}", Percentage(population, doses[0])) + "%";
+                SecondDosesCounterText.text = "2nd Doses: " + doses[1] + "    " + string.Format("{0:0.00}", Percentage(population, doses[1])) + "%";
+                ThirdDosesCounterText.text = "3rd Doses: " + doses[2] + "    " + string.Format("{0:0.00}", Percentage(population, doses[2])) + "%";
+                break;
+            case 4:
+                FirstDosesCounterText.text = "1st Doses: " + doses[0] + "    " + string.Format("{0:0.00}", Percentage(population, doses[0])) + "%";
+                SecondDosesCounterText.text = "2nd Doses: " + doses[1] + "    " + string.Format("{0:0.00}", Percentage(population, doses[1])) + "%";
+                ThirdDosesCounterText.text = "3rd Doses: " + doses[2] + "    " + string.Format("{0:0.00}", Percentage(population, doses[2])) + "%";
+                FourthDosesCounterText.text = "4th Doses: " + doses[3] + "    " + string.Format("{0:0.00}", Percentage(population, doses[3])) + "%";
+                break;
+        }
+            
+
+        
         TotalIntensiveCareCounterText.text = "Intensive Care available: " + Interlocked.Read(ref ContagionSystem.currentTotIntensive); ;
         IntensiveVAXCareCounterText.text = "in Intensive Care: " + Interlocked.Read(ref CounterSystem.intensiveVAXCounter); ;
         IntensiveNOVAXCareCounterText.text = "in Intensive Care: " + Interlocked.Read(ref CounterSystem.intensiveNOVAXCounter); ;

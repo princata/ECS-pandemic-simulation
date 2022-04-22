@@ -31,7 +31,26 @@ public class Human : MonoBehaviour
     public static Configuration conf;
     public bool vaccinationPolicy;
     public bool heatmap;
-  
+    public bool randomSocResp;
+    public float socialRespons;
+    public float noVaxPercentage;
+    public float remoteWorkerPecent;
+    public int[] inputAge;
+ 
+    public float symptomsStudent;
+    public float ifrStudent;
+    public float symptomsWorker;
+    public float ifrWorker;
+    public float symptomsRetired;
+    public float ifrRetired;
+
+    public int minDaysFDTstudent;
+    public int maxDaysFDTstudent;
+    public int minDaysFDTworker;
+    public int maxDaysFDTworker;
+    public int minDaysFDTretired;
+    public int maxDaysFDTretired;
+
     public int template1Percent;
     public int template2Percent;
     public int template3Percent;
@@ -79,17 +98,38 @@ public class Human : MonoBehaviour
 
         //Extract configuration from json file
         conf = Configuration.CreateFromJSON();
-        int numberOfInfects = conf.NumberOfInfects;
-        quadrantCellSize = conf.SectionSize;
-        float tmp = ICUproportion(conf.NumberOfHumans); //CALCOLO ICU IN BASE AI DATI VERI SULLE ICU
+        int numberOfInfects = conf.numberOfInfects;
+        quadrantCellSize = conf.sectionSize;
+        inputAge = conf.inputAge;
+        heatmap = conf.heatmap;
+        vaccinationPolicy = conf.vaccinationPolicy;
+        randomSocResp = conf.randomSocResp;
+        if (!randomSocResp)
+            socialRespons = conf.socialResponsibility/100f;
+        noVaxPercentage = conf.noVaxPercentage/100f;
+        symptomsStudent = conf.symptomsStudent/100f;
+        ifrStudent = conf.ifrStudent/100f;
+        symptomsWorker = conf.symptomsWorker/100f;
+        ifrWorker = conf.ifrWorker/100f;
+        symptomsRetired = conf.symptomsRetired/100f;
+        ifrRetired = conf.ifrRetired/100f;
+        minDaysFDTstudent = conf.minDaysFDTstudent;
+        maxDaysFDTstudent = conf.maxDaysFDTstudent;
+        minDaysFDTworker = conf.minDaysFDTworker;
+        maxDaysFDTworker = conf.maxDaysFDTworker;
+        minDaysFDTretired = conf.minDaysFDTretired;
+        maxDaysFDTretired = conf.maxDaysFDTretired;
+        remoteWorkerPecent = conf.remoteWorkerPercent / 100f;
+        //Time Scale
+        Time.timeScale = conf.timeScale; 
+
+        int gridWidth = Testing.Instance.grid.GetWidth();
+        int gridHeight = Testing.Instance.grid.GetHeight();
+
+        float tmp = ICUproportion(conf.numberOfHumans, conf.icu4100k); //ICU proportion based on number of ICU per 100k inhabitants
         this.totalIntensiveCare = Mathf.RoundToInt(tmp);
 
-        heatmap = conf.heatmap;
-        vaccinationPolicy = conf.VaccinationPolicy;
-        //Time Scale
-        Time.timeScale = conf.TimeScale; //DA PARAMETRIZZARE
-
-        entityArray = new NativeArray<Entity>(conf.NumberOfHumans, Allocator.Temp);
+        entityArray = new NativeArray<Entity>(conf.numberOfHumans, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
 
         NeighbourQuadrants = new NativeArray<int>(8, Allocator.Persistent);
@@ -102,9 +142,6 @@ public class Human : MonoBehaviour
         NeighbourQuadrants[6] = -quadrantYMultiplier; //down
         NeighbourQuadrants[7] = 0 - (quadrantYMultiplier - 1); //right down
         // Get grid size
-        int gridWidth = Testing.Instance.grid.GetWidth();
-        int gridHeight = Testing.Instance.grid.GetHeight();
-
        
         //initialize family generator
         famGenerator = new FamilyGenerator();
@@ -135,7 +172,7 @@ public class Human : MonoBehaviour
        
         for (int i = 0; i < gridWidth; i++)
         {
-            for (int j = 0; j < gridHeight; j++)//Inserire controllo piani
+            for (int j = 0; j < gridHeight; j++)
             {
 
                 int hashmapkey = GetPositionHashMapKey(i, j);
@@ -155,9 +192,9 @@ public class Human : MonoBehaviour
                 }); 
 
                 int f = 0;
-                string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); //conversione numero in hex
+                string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); 
                 
-                foreach (var floor in tiles) //analisi di ogni char rappresentante un piano
+                foreach (var floor in tiles)
                 {
 
                     if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Home)
@@ -250,7 +287,7 @@ public class Human : MonoBehaviour
         //famGenerator.PrintTemplateDebug();
         float symptomsProbability = 0f;
         float humanDeathProbability = 0f;
-        float socialResponsability = 0f;
+        
         float jobEssentiality = 0f;
         float firstDoseTime = 0f;
         bool PROvax = false;
@@ -262,7 +299,7 @@ public class Human : MonoBehaviour
             FamilyInfo familyInfo = famGenerator.GetFamilyAndAgeDetail();
             HumanStatus age = familyInfo.age;
             
-            float speed = AgentFeatures.GetSpeedForAgeComfortable(AgentFeatures.GetAgentAge(), AgentFeatures.GetAgentGender());
+            float speed = AgentFeatures.GetSpeedForAgeComfortable(AgentFeatures.GetAgentAge(inputAge), AgentFeatures.GetAgentGender());
 
             var homePosition = familyInfo.homePosition;
             var officePosition = Vector3Int.zero;
@@ -273,10 +310,11 @@ public class Human : MonoBehaviour
             //var found = false;
             //var count = 0;
             
-            socialResponsability = GenerateNormalRandom(0.5f, 0.45f, 0f, 0.99f);
+            if(randomSocResp)
+                socialRespons = GenerateNormalRandom(0.5f, 0.45f, 0f, 0.99f);
 
             
-            if (socialResponsability > 0.40f)//SECONDO VACCINAZIONI GOVERNO ITALIANO
+            if (socialRespons > noVaxPercentage) //percentage of NOVAX in the simulation (considered only if vaccinationPolicy is set true)
                 PROvax = true;
             else
                 PROvax = false;
@@ -288,7 +326,7 @@ public class Human : MonoBehaviour
                 
                 for (int l = 0; l < NeighbourQuadrants.Length; l++)
                 {
-                    if (schoolMap.ContainsKey(hashmapkeyHome))//QUESTO CHECK MI PERMETTE DI PRENDERE SOLO I QUADRANTI ADIACENTI VALIDI, CIOE' CHE CADONO ALL'INTERNO DELLA MAPPA
+                    if (schoolMap.ContainsKey(hashmapkeyHome))//this check allows to pick only the valid quadrants in the map
                     {
                         NativeMultiHashMap<int, Vector3Int>.Enumerator e = schoolMap.GetValuesForKey(hashmapkeyHome);
                         while (e.MoveNext())
@@ -307,7 +345,7 @@ public class Human : MonoBehaviour
                 }
                 
 
-                if (schoolsList.Count <= 0)//NON HO TROVATO NULLA 
+                if (schoolsList.Count <= 0)
                 {
                     Debug.LogError($"The map is incorrectly built, no office is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
                     UnityEditor.EditorApplication.isPlaying = false;
@@ -323,10 +361,10 @@ public class Human : MonoBehaviour
                    schoolsList.Clear();
                 }
                                   
-                symptomsProbability = GenerateNormalRandom(0.2f, 0.1f, 0f, 1f) * 100; //20% sintomi
-                humanDeathProbability = GenerateNormalRandom(0.01f, 0.1f, 0.01f, 1f) * 100; //1% IFR (INFECTION FATALITY RATE)
+                symptomsProbability = GenerateNormalRandom(symptomsStudent, 0.1f, 0f, 1f) * 100; //20% symptoms for young people
+                humanDeathProbability = GenerateNormalRandom(ifrStudent, 0.1f, 0.01f, 1f) * 100; //1% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
-                    firstDoseTime = UnityEngine.Random.Range(10f * 25f * 60f, 20f * 25f * 60f);
+                    firstDoseTime = UnityEngine.Random.Range(minDaysFDTstudent * 25f * 60f, maxDaysFDTstudent * 25f * 60f);
 
                 jobEssentiality = 1f;
 
@@ -338,7 +376,7 @@ public class Human : MonoBehaviour
 
                 for (int l = 0; l < NeighbourQuadrants.Length; l++)
                 {
-                    if (officesMap.ContainsKey(hashmapkeyHome))//QUESTO CHECK MI PERMETTE DI PRENDERE SOLO I QUADRANTI ADIACENTI VALIDI, CIOE' CHE CADONO ALL'INTERNO DELLA MAPPA
+                    if (officesMap.ContainsKey(hashmapkeyHome))//this check allows to pick only the valid quadrants in the map
                     {
                         NativeMultiHashMap<int, Vector3Int>.Enumerator e = officesMap.GetValuesForKey(hashmapkeyHome);
                         while (e.MoveNext())
@@ -376,21 +414,21 @@ public class Human : MonoBehaviour
                 //  else
                 //    officePosition = offices[UnityEngine.Random.Range(0, offices.Length)];
 
-                symptomsProbability = GenerateNormalRandom(0.30f, 0.1f, 0.25f, 1f) * 100; //30% sintomi
-                humanDeathProbability = GenerateNormalRandom(0.03f, 0.1f, 0.01f, 1f) * 100; //3% IFR (INFECTION FATALITY RATE)
+                symptomsProbability = GenerateNormalRandom(symptomsWorker, 0.1f, 0.25f, 1f) * 100; //30% sintomi
+                humanDeathProbability = GenerateNormalRandom(ifrWorker, 0.1f, 0.01f, 1f) * 100; //3% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
-                    firstDoseTime = UnityEngine.Random.Range(5f * 25f * 60f, 15f * 25f * 60f);
+                    firstDoseTime = UnityEngine.Random.Range(minDaysFDTworker * 25f * 60f, maxDaysFDTworker * 25f * 60f);
                
-                jobEssentiality = GenerateNormalRandom(0.7f, 0.3f, 0f, 1f); //percentuale lavoratori da remoto 30%
+                jobEssentiality = GenerateNormalRandom(remoteWorkerPecent, 0.1f, 0f, 1f); //percentuale lavoratori da remoto 30%
 
             }
             else if (age == HumanStatus.Retired) // 60-90 age
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-                symptomsProbability = GenerateNormalRandom(0.50f, 0.1f, 0.5f, 1f) * 100; //50% sintomi
-                humanDeathProbability = GenerateNormalRandom(0.10f, 0.1f, 0.1f, 1f) * 100; // 10% IFR (INFECTION FATALITY RATE)
+                symptomsProbability = GenerateNormalRandom(symptomsRetired, 0.1f, 0.5f, 1f) * 100; //50% sintomi
+                humanDeathProbability = GenerateNormalRandom(ifrRetired, 0.1f, 0.1f, 1f) * 100; // 10% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
-                    firstDoseTime = UnityEngine.Random.Range(1f * 25f * 60f, 10f * 25f * 60f);
+                    firstDoseTime = UnityEngine.Random.Range(minDaysFDTretired * 25f * 60f, maxDaysFDTretired * 25f * 60f);
 
             }
           
@@ -418,7 +456,7 @@ public class Human : MonoBehaviour
                 sociality = UnityEngine.Random.Range(0, 10 * 60),
                 fatigue = UnityEngine.Random.Range(0, 10 * 60),
                 grocery = UnityEngine.Random.Range(0, 3 * 25 * 60),
-                socialResposibility = socialResponsability,
+                socialResposibility = socialRespons,
                 jobEssentiality = jobEssentiality,
                 homePosition = homePosition,
                 officePosition = officePosition,
@@ -460,9 +498,9 @@ public class Human : MonoBehaviour
             //  {
 
 
-            mean = (conf.MinDaysInfectious + conf.MaxDaysInfectious) * 60 * 24 / 2;
-            sigma = (conf.MaxDaysInfectious * 60 * 24 - mean) / 3;
-            infectiousThreshold = GenerateNormalRandom(mean, sigma, conf.MinDaysInfectious * 24 * 60, conf.MaxDaysInfectious * 24 * 60);
+            mean = (conf.minDaysInfectious + conf.maxDaysInfectious) * 60 * 24 / 2;
+            sigma = (conf.maxDaysInfectious * 60 * 24 - mean) / 3;
+            infectiousThreshold = GenerateNormalRandom(mean, sigma, conf.minDaysInfectious * 24 * 60, conf.maxDaysInfectious * 24 * 60);
             //AUMENTO IL TEMPO DI ESSERE CONTAGIOSI IN BASE ALL'ETA'
             infectiousThreshold += Percent(infectiousThreshold, (int)age);
 
@@ -473,18 +511,18 @@ public class Human : MonoBehaviour
             //  if (humanDeathProbability <= 1 - conf.probabilityOfDeath)
             //{
 
-            mean = (conf.MinDaysRecovered + conf.MaxDaysRecovered) * 60 * 24 / 2;
-            sigma = (conf.MaxDaysRecovered * 60 * 24 - mean) / 3;
+            mean = (conf.minDaysRecovered + conf.maxDaysRecovered) * 60 * 24 / 2;
+            sigma = (conf.maxDaysRecovered * 60 * 24 - mean) / 3;
             // }
-            recoveredThreshold = GenerateNormalRandom(mean, sigma, conf.MinDaysRecovered * 24 * 60, conf.MaxDaysRecovered * 24 * 60);
+            recoveredThreshold = GenerateNormalRandom(mean, sigma, conf.minDaysRecovered * 24 * 60, conf.maxDaysRecovered * 24 * 60);
             //AUMENTO IL TEMPO DI RECUPERO IN BASE ALL'ETA', CALCOLANDO LA PERCENTUALE DI RECOVERED E AGGIUNGENDOLA
            // recoveredThreshold += Percent(recoveredThreshold, (int)age);
             // Debug.Log(recoveredThreshold + age.ToString());
 
-            mean = (conf.MinDaysExposed + conf.MaxDaysExposed) * 60 * 24 / 2;
-            sigma = (conf.MaxDaysExposed * 60 * 24 - mean) / 3;
+            mean = (conf.minDaysExposed + conf.maxDaysExposed) * 60 * 24 / 2;
+            sigma = (conf.maxDaysExposed * 60 * 24 - mean) / 3;
             //TEMPO DI INCUBAZIONE NON INFLUENZATO DALL'ETA'
-            exposedThreshold = GenerateNormalRandom(mean, sigma, conf.MinDaysExposed * 60 * 24, conf.MaxDaysExposed * 60 * 24);
+            exposedThreshold = GenerateNormalRandom(mean, sigma, conf.minDaysExposed * 60 * 24, conf.maxDaysExposed * 60 * 24);
             exposedThreshold += Percent(exposedThreshold, UnityEngine.Random.Range(-30,10));
 
             if (numberOfInfects > 0 && oldfamily != familykey)
@@ -628,9 +666,9 @@ public class Human : MonoBehaviour
         return (total * percent) / 100;
     }
 
-    public float ICUproportion(float totalH)
+    public float ICUproportion(float totalH, int icu4100k)
     {
-        return (totalH * 14) / 100000f;
+        return (totalH * icu4100k) / 100000f;
     }
 
     public TemplateInfo FillTemplateData(int totalPopulation)

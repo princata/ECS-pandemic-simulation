@@ -33,7 +33,7 @@ public class PlagueSystem : SystemBase
                     float uvWidth = 1f / 100;
                     float uvHeight = 1f;
                     float uvOffsetY = 0f;
-                    Vector3 scale = new Vector3(10f, 10f);
+                    Vector3 scale = new Vector3(20f, 20f);
 
                     if (ic.status == Status.recovered)
                     {

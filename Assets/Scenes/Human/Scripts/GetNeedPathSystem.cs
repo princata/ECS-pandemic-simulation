@@ -13,10 +13,16 @@ public class GetNeedPathSystem : SystemBase
     private float CellSize;
     private int Width;
     private int Height;
-  //  private NativeArray<int> Grid;
+    [ReadOnly]
+    public float eatingOutProb;
+    [ReadOnly]
+    public float visitFriendProbNL;
+    [ReadOnly]
+    public float visitFriendProbL;
+    //  private NativeArray<int> Grid;
 
-  //  private NativeArray<int2> directions;
-   // private NativeArray<int2> start_offset;
+    //  private NativeArray<int2> directions;
+    // private NativeArray<int2> start_offset;
     //private Unity.Mathematics.Random rnd;
 
     private EndSimulationEntityCommandBufferSystem ecbSystem;
@@ -33,6 +39,9 @@ public class GetNeedPathSystem : SystemBase
 
     protected override void OnStartRunning()
     {
+        eatingOutProb = Human.conf.eatingOutProb/100f;
+        visitFriendProbNL = Human.conf.visitFriendProbNL / 100f; //in case of NO lockdown
+        visitFriendProbL = Human.conf.visitFriendProbL / 100f; //in case of NO lockdown
         sectionSize = Human.Instance.quadrantCellSize;
         CellSize = Testing.Instance.grid.GetCellSize();
         Width = Testing.Instance.grid.GetWidth();
@@ -62,13 +71,16 @@ public class GetNeedPathSystem : SystemBase
         var NeighbourQuadrants = Neighbour;
         var placesHM = placesHashMap;
         var houses = housesHMap;
-        var lockdown = Human.conf.Lockdown;
+        var lockdown = Human.conf.lockdown;
         var lockGym = Human.conf.lockGym;
         var lockSchool = Human.conf.lockSchool;
         var lockPubs = Human.conf.lockPubs;
-        var vaccinationPolicy = Human.conf.VaccinationPolicy;
+        var vaccinationPolicy = Human.conf.vaccinationPolicy;
         var sectionsize = sectionSize;
-      //  var large = Human.Instance.large;
+        var eatingOutP = eatingOutProb;
+        var visitFriendPNL = visitFriendProbNL;
+        var visitFriendPL = visitFriendProbL;
+        //  var large = Human.Instance.large;
         var randomArray = World.GetExistingSystem<RandomSystem>().RandomArray;
 
         //Note the use of the keywords ref and in on the parameters of the ForEach lambda function.
@@ -97,7 +109,7 @@ public class GetNeedPathSystem : SystemBase
             {
                 case NeedType.needForFood:
                     //NextDouble() returns a double-precision floating point number which is greater than or equal to 0.0, and less than 1.0.
-                    if (random.NextDouble() < 0.30 && !lockdown && !lockPubs)
+                    if (random.NextDouble() < eatingOutP && !lockdown && !lockPubs)//probability to go to the pub for eating 
                     {
                         result = new NativeArray<TileMapEnum.TileMapSprite>(1, Allocator.Temp);
                         result[0] = TileMapEnum.TileMapSprite.Pub;
@@ -126,7 +138,7 @@ public class GetNeedPathSystem : SystemBase
                     //tileComponent.currentFloor = 0;
                     break;
                 case NeedType.needForSociality:
-                    if ((random.NextDouble() < 0.20 && !lockdown) || (random.NextDouble() < 0.5 * (1 - humanComponent.socialResposibility) && lockdown))
+                    if ((random.NextDouble() < visitFriendPNL && !lockdown) || (random.NextDouble() < visitFriendPL * (1 - humanComponent.socialResposibility) && lockdown))
                     {
                        // result = new NativeArray<TileMapEnum.TileMapSprite>(0, Allocator.Temp);
                         found = true;
