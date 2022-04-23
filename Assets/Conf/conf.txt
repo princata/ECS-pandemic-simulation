@@ -61,12 +61,14 @@
 	"daysOfImmunity": 100,
 	"hungerOnset": 7,
 	"hungerDuration" 1,
-	"fatigueDuration" 8,
+	"restDuration" 8,
 	"sociabilityOnset": 22,
 	"sociabilityDuration" 3,
 	"sportmanshipOnset": 46,
 	"sportmanshipDuration" 2,
 	"groceryOnset": 75,
 	"groceryDuration" 1,
-	"workDuration" 8
+	"workDuration" 8,
+	"familyTemplate":[1122,12233,111,22,2,33],
+	"familyDistrib":[30,20,10,20,10,10]
 }

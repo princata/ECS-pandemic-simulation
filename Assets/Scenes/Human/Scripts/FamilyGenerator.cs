@@ -20,10 +20,11 @@ public class FamilyGenerator
     public static int familyCounter = 0;
     public static int currentFamily = -1;
     public static int templateCounter = 0;
-    public static int studentCounter = 0;
-    public static int workerCounter = 0;
-    public static int retiredCounter = 0;
+   // public static int studentCounter = 0;
+   // public static int workerCounter = 0;
+   // public static int retiredCounter = 0;
     public static int countKey = 0;
+    public static int countMember = 0;
     public static Vector3Int lastHomePosition;
     public static TemplateInfo templateInfos;
     public static NativeMultiHashMap<int,Vector3Int> houses;
@@ -59,21 +60,21 @@ public class FamilyGenerator
 
     public void PrintTemplateDebug()
     {
-        Debug.Log(templateInfos.template1Total);
-        Debug.Log(templateInfos.template2Total);
-        Debug.Log(templateInfos.template3Total);
-        Debug.Log(templateInfos.template4Total);
-        Debug.Log(templateInfos.template5Total);
+       for(int i = 0; i< templateInfos.templateTotal.Length;i++)
+            Debug.Log(templateInfos.templateTotal[i]);
+      
+       
     }
 
     public FamilyInfo GetFamilyAndAgeDetail()
     {
         FamilyInfo info = new FamilyInfo();
+       
 
         if (currentFamily != familyCounter)
         {
             UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-            if (templateCounter == 4 && familyCounter % 2 == 0)
+            if (templateCounter == (templateInfos.templates.Length - 1) && familyCounter % 2 == 0)
             { //ogni family counter pari piazzo due anziani nelle case di riposo
                 lastHomePosition = OAhouses[UnityEngine.Random.Range(0, OAhouses.Length)];              
             }
@@ -121,32 +122,49 @@ public class FamilyGenerator
            
         }
 
-        if(templateInfos.template1Total > 0)
-        {
-            templateCounter = 0;            
-        }
-        else if (templateInfos.template2Total > 0)
-        {
-            templateCounter = 1;
-            
-        }
-        else if (templateInfos.template3Total > 0)
-        {
-            templateCounter = 2;
-           
-        }
-        else if (templateInfos.template4Total > 0)
-        {
-            templateCounter = 3;
-            
-        }
-        else if (templateInfos.template5Total > 0)
-        {
-            templateCounter = 4;
-           
-        }
+        if (templateInfos.templateTotal[templateCounter] <= 0)//change template when the total nuber of family for the current template are implemented
+            templateCounter++;
 
-       
+        if (countMember < templateInfos.nComponents[templateCounter])
+        {
+
+            switch (templateInfos.templates[templateCounter].ToString()[countMember])//analysing each component of the family
+            {
+                case '1': //students
+                    info.age = HumanStatus.Student;
+                    info.familyKey = familyCounter;
+                    info.homePosition = lastHomePosition;
+                    currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
+
+                    break;
+
+                case '2'://workers
+                    info.age = HumanStatus.Worker;
+                    info.familyKey = familyCounter;
+                    info.homePosition = lastHomePosition;
+                    currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
+                    break;
+
+                case '3'://retired
+                    info.age = HumanStatus.Retired;
+                    info.familyKey = familyCounter;
+                    info.homePosition = lastHomePosition;
+                    currentFamily = familyCounter;
+                    info.sectionKey = currentHMK;
+
+                    break;
+
+            }
+            countMember++;
+        } 
+
+        templateInfos.templateTotal[templateCounter]--;
+        familyCounter++;
+        countMember = 0; //start again with another family
+  
+        /*
         switch (templateCounter)
         {
             case 0:
@@ -297,7 +315,7 @@ public class FamilyGenerator
                 break;
 
         }
-
+        */
         return info;
     }
 

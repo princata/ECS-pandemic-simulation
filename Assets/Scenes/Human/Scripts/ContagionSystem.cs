@@ -48,6 +48,8 @@ public class ContagionSystem : SystemBase
     public float schoolTRs;
     [ReadOnly]   
     public float schoolTRa;
+    [ReadOnly]
+    public int daysBTWdoses;
 
     public static long currentTotIntensive;
 
@@ -74,7 +76,7 @@ public class ContagionSystem : SystemBase
         indoorTRs = Human.conf.indoorTRs / 100f;
         schoolTRs = Human.conf.schoolTRs / 100f;
         schoolTRa = Human.conf.schoolTRa/100f;
-
+        daysBTWdoses = Human.conf.daysBTWdoses;
         protectionRecovered = Human.conf.protectionRecovered/100f;
         contagionThreshold = Human.conf.exposureTime;
         contagionDistance = Human.conf.contagionDistance;
@@ -94,7 +96,7 @@ public class ContagionSystem : SystemBase
         var exposureTime = contagionThreshold;
         var distance = contagionDistance;
         var protectRecov = protectionRecovered;
-
+        //Transmission Rate for each location and type of infected
         var householdTRS = householdTRs;
         var householdTRA = householdTRa;
         var workplaceTRS = workplaceTRs;
@@ -107,6 +109,7 @@ public class ContagionSystem : SystemBase
         var indoorTRA = indoorTRa;
         var schoolTRS = schoolTRs;
         var schoolTRA = schoolTRa;
+        var daysBTWdose = daysBTWdoses;
 
         NativeArray<long> localIntensiveCounter = new NativeArray<long>(1, Allocator.TempJob);
         localIntensiveCounter[0] = 0;
@@ -127,7 +130,7 @@ public class ContagionSystem : SystemBase
                 NativeMultiHashMapIterator<int> nativeMultiHashMapIterator;
                 if (quadrantMultiHashMap.TryGetFirstValue(hashMapKey, out quadrantData, out nativeMultiHashMapIterator))
                 {
-                    //la multihashmap ha iscritte solo le entità infette
+                   
                     //cycle through all entries on hashmap with the same Key
                     do
                     {
@@ -153,7 +156,7 @@ public class ContagionSystem : SystemBase
                                     if (quadrantData.symptomatic)
                                     {
 
-                                        ic.contagionCounter += householdTRS * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //IMMUNITY -> (0.01f - 0.99f) 15& SYMPTOMATIC TRANSMISSION RATE
+                                        ic.contagionCounter += householdTRS * deltaTime * (1 - humanComponent.socialResposibility) * (1f - ic.currentImmunityLevel); //IMMUNITY -> (0.01f - 0.99f) 15% SYMPTOMATIC TRANSMISSION RATE
 
                                     }
 
@@ -342,7 +345,7 @@ public class ContagionSystem : SystemBase
                     {
                         humanComponent.need4vax = 0f;
                     if (humanComponent.vaccinations < 1) //particular case: SE UN PROVAX VIENE CONTAGIATO PRIMA DI FARE LA PRIMA DOSE, IL FIRST DOSE TIME VIENE SETTATO DOPO 5 MESI DAL RECUPERO
-                        humanComponent.firstDoseTime = 150 * 25 * 60;
+                        humanComponent.firstDoseTime = daysBTWdose * 25 * 60;
                     }
 
                     if (ic.intensiveCare)

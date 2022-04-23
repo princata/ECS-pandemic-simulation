@@ -225,7 +225,7 @@ public class GetNeedPathSystem : SystemBase
                         }
 
                     }
-                    else //IMPLEMENTATA LA DAD PER STUDENTI E LO SMART WORKING
+                    else //distance learning for students and smart working for workers
                     {
                        
                         endX = humanComponent.homePosition.x;
@@ -322,8 +322,7 @@ public class GetNeedPathSystem : SystemBase
                 //NativeMultiHashMapIterator<int> nativeMultiHashMapIterator;
                 NativeList<TileInfo> tmpTiles = new NativeList<TileInfo>(Allocator.Temp);
 
-
-                //SELEZIONE DI UNA DESTINAZIONE NELLA STESSA O NELLE ADIACENTI SEZIONI DI MAPPA DOVE SI TROVA L'UMANO
+                //search destination in the current quadrant or in the adjacent ones
                     
                 for(int i = 0; i< NeighbourQuadrants.Length; i++)
                 {

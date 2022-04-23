@@ -73,8 +73,8 @@ public class SaveSystem : MonoBehaviour
         }
         world.EntityManager.EndExclusiveEntityTransaction();
         main.MoveEntitiesFrom(entityManager);
-        CounterSystem.startAppend = true; //rimetto a true così inizio a scrivere statistiche con le nuove disposizioni
-        world.Dispose();
+        CounterSystem.startAppend = true; //set again to true in order to write statistics with new policies
+        world.Dispose(); 
 
     }
 

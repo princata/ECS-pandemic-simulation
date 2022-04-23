@@ -28,7 +28,7 @@ public class HumanSystem : SystemBase
     public int daysBTWdoses;
     public float hungerOnset;
     public float hungerDuration;
-    public float fatigueDuration;
+    public float restDuration;
     public float sociabilityOnset;
     public float sociabilityDuration;
     public float sportmanshipOnset;
@@ -57,7 +57,7 @@ public class HumanSystem : SystemBase
             daysOfImmunity = daysBTWdoses - 1;
         hungerOnset = Human.conf.hungerOnset;
         hungerDuration = Human.conf.hungerDuration;
-        fatigueDuration = Human.conf.fatigueDuration;
+        restDuration = Human.conf.restDuration;
         sociabilityOnset = Human.conf.sociabilityOnset;
         sociabilityDuration = Human.conf.sociabilityDuration;
         sportmanshipOnset = Human.conf.sportmanshipOnset;
@@ -88,7 +88,7 @@ public class HumanSystem : SystemBase
         var immunityTime = daysOfImmunity;
         var hungerOn = hungerOnset;
         var hungerDur = hungerDuration;
-        var fatigueDur = fatigueDuration;
+        var restDur = restDuration;
         var sociabilityOn = sociabilityOnset;
         var sociabilityDur = sociabilityDuration;
         var sportmanshipOn = sportmanshipOnset;
@@ -97,7 +97,7 @@ public class HumanSystem : SystemBase
         var groceryDur = groceryDuration;
         var workDur = workDuration;
 
-        //----------------------------------INCREMENTO BISOGNI----------------------------------------
+        //----------------------------------INCREASING NEEDS----------------------------------------
         JobHandle jobhandle = Entities.ForEach((ref HumanComponent hc, in InfectionComponent ic) =>
         {
           
@@ -105,7 +105,7 @@ public class HumanSystem : SystemBase
                 if (ic.symptomatic && hc.socialResposibility > 0.5f)
                 {
                     //QUARANTENA
-                    hc.fatigue = math.min(hc.fatigue + 1f * deltaTime, (25f - fatigueDur) * 60);
+                    hc.fatigue = math.min(hc.fatigue + 1f * deltaTime, (25f - restDur) * 60);
                 }
                 else
                 {
@@ -113,9 +113,9 @@ public class HumanSystem : SystemBase
                     hc.hunger = math.min(hc.hunger + 1f * deltaTime, hungerOn * 60f);
 
                     if (hc.age != HumanStatusEnum.HumanStatus.Retired)
-                        hc.fatigue = math.min(hc.fatigue + 1f * deltaTime, (25f - fatigueDur) * 60f); 
+                        hc.fatigue = math.min(hc.fatigue + 1f * deltaTime, (25f - restDur) * 60f); 
                     else
-                        hc.fatigue = math.min(hc.fatigue + 1f * deltaTime, (25f - fatigueDur - 3f) * 60); 
+                        hc.fatigue = math.min(hc.fatigue + 1f * deltaTime, (25f - restDur - 3f) * 60); 
 
                     if (hc.age == HumanStatusEnum.HumanStatus.Worker)
                         hc.work = math.min(hc.work + 1f * deltaTime, (25f - workDur) * 60); 
@@ -125,7 +125,7 @@ public class HumanSystem : SystemBase
                     if (ic.currentImmunityLevel > 0.01f)
                         hc.immunityTime = math.min(hc.immunityTime + 1f * deltaTime, immunityTime * 25 * 60); 
 
-                    //-------BISOGNI INFLUENZATI DA LOCKDOWN-----------
+                    //-------NEEDS INFLUENCED BY LOCKDOWN-----------
                     if (!lockdown)
                     {
                         hc.sociality = math.min(hc.sociality + 1f * deltaTime, sociabilityOn * 60); 
@@ -139,7 +139,7 @@ public class HumanSystem : SystemBase
                         hc.sportivity = math.min(hc.sportivity + (1 - hc.socialResposibility) * 0.3f * deltaTime, sportmanshipOn * 60);
                     }
                     
-                    //------PROCEDIMENTO INCREMENTO CICLO VACCINALE--------------
+                    //------INCREASING VAX NEED--------------
                     if (hc.PROvax && vaccinationPolicy )
                     {                      
                         if (hc.vaccinations == 0 && ic.status == Status.susceptible && ic.currentImmunityLevel < protectionImmun + 1f)
@@ -151,7 +151,7 @@ public class HumanSystem : SystemBase
         }).ScheduleParallel(Dependency);
         jobhandle.Complete();
 
-        //-------------------------------ASSEGNAZIONE BISOGNI---------------------------
+        //-------------------------------NEEDS ASSIGNMENT---------------------------
         //cycle all the entities without a NeedComponent and assign it according to parameters
         JobHandle jobhandle1 = Entities.WithNone<NeedComponent>().ForEach((Entity entity, int nativeThreadIndex, ref HumanComponent hc, ref InfectionComponent ic) =>
         {
@@ -213,7 +213,7 @@ public class HumanSystem : SystemBase
                     searchRadius = 2
                 });
             }
-            else if (hc.fatigue > (24f - fatigueDur) * 60 && hc.age != HumanStatusEnum.HumanStatus.Retired) 
+            else if (hc.fatigue > (24f - restDur) * 60 && hc.age != HumanStatusEnum.HumanStatus.Retired) 
             {
                 ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                 {
@@ -224,7 +224,7 @@ public class HumanSystem : SystemBase
                     searchRadius = 2
                 });
             }
-            else if (hc.fatigue > (24f - (fatigueDur + 3f)) * 60 && hc.age == HumanStatusEnum.HumanStatus.Retired) 
+            else if (hc.fatigue > (24f - (restDur + 3f)) * 60 && hc.age == HumanStatusEnum.HumanStatus.Retired) 
             {
                 ecb.AddComponent<NeedComponent>(nativeThreadIndex, entity, new NeedComponent
                 {
@@ -304,7 +304,7 @@ public class HumanSystem : SystemBase
 
 
 
-        //-----------------------DECREMENTO BISOGNI--------------------------
+        //-----------------------DECREASING NEEDS--------------------------
         //manage satisfied needs, when value for a parameter decreases under 25% as threshold 
         JobHandle jobhandle2 = Entities.ForEach((Entity entity, int nativeThreadIndex, ref HumanComponent hc, ref InfectionComponent ic, in Translation t, in NeedComponent needComponent, in TileComponent tileComponent, in PathFollow pathFollow) =>
         {
@@ -326,9 +326,9 @@ public class HumanSystem : SystemBase
                         if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
                         {
                             if (needComponent.currentNeed == NeedType.needToRest && hc.age != HumanStatusEnum.HumanStatus.Retired)
-                                hc.fatigue = Math.Max(0, hc.fatigue - ((24f/fatigueDur) + 1f) * deltaTime);
+                                hc.fatigue = Math.Max(0, hc.fatigue - ((24f/restDur) + 1f) * deltaTime);
                             else if (needComponent.currentNeed == NeedType.needToRest && hc.age == HumanStatusEnum.HumanStatus.Retired)
-                                hc.fatigue = Math.Max(0, hc.fatigue - ((21f / fatigueDur) + 1f) * deltaTime);//retired people sleep 3h more
+                                hc.fatigue = Math.Max(0, hc.fatigue - ((21f / restDur) + 1f) * deltaTime);//retired people sleep 3h more
                             else if (needComponent.currentNeed == NeedType.needForFood)
                                 hc.hunger = Math.Max(0, hc.hunger - ((hungerOn/hungerDur) + 1f) * deltaTime); 
                             if (needComponent.currentNeed == NeedType.needToWork)
@@ -385,7 +385,7 @@ public class HumanSystem : SystemBase
                         if (hc.homePosition.x == currentX && hc.homePosition.y == currentY)
                         {
                             if (needComponent.currentNeed == NeedType.needToRest)
-                                hc.fatigue = Math.Max(0, hc.fatigue - ((21f/fatigueDur) + 1f) * deltaTime); 
+                                hc.fatigue = Math.Max(0, hc.fatigue - ((21f/restDur) + 1f) * deltaTime); 
                             else if (needComponent.currentNeed == NeedType.needForFood)
                                 hc.hunger = Math.Max(0, hc.hunger - ((hungerOn/hungerDur) + 1f) * deltaTime);
                                        
@@ -401,7 +401,7 @@ public class HumanSystem : SystemBase
                         break;
                 }
             }
-            //IMPLEMENTARE LOGICA % DEI THRESHOLD
+           
             //As soon as its current need drops below a minimum threshold the entity is free to satisfy its next need.
             if (needComponent.currentNeed == NeedType.needToHeal && !ic.intensiveCare && !ic.infected)
             {
@@ -409,17 +409,17 @@ public class HumanSystem : SystemBase
                 
             }
 
-            else if (needComponent.currentNeed == NeedType.needForFood && hc.hunger < 10f * hungerOn * 0.6) //5% di 7*60
+            else if (needComponent.currentNeed == NeedType.needForFood && hc.hunger < 10f * hungerOn * 0.6) 
             {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
               
             }
-            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 10f * (25f - fatigueDur) * 0.6 && hc.age != HumanStatusEnum.HumanStatus.Retired)
+            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 10f * (25f - restDur) * 0.6 && hc.age != HumanStatusEnum.HumanStatus.Retired)
             {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
                
             }
-            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 10f * (21 - fatigueDur) * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Retired)
+            else if (needComponent.currentNeed == NeedType.needToRest && hc.fatigue < 10f * (21 - restDur) * 0.6 && hc.age == HumanStatusEnum.HumanStatus.Retired)
             {
                 ecb.RemoveComponent<NeedComponent>(nativeThreadIndex, entity);
                

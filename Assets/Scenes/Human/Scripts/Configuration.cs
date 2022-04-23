@@ -66,7 +66,7 @@ public class Configuration
     public int daysOfImmunity;
     public float hungerOnset;
     public float hungerDuration;
-    public float fatigueDuration;
+    public float restDuration;
     public float sociabilityOnset;
     public float sociabilityDuration;
     public float sportmanshipOnset;
@@ -74,6 +74,8 @@ public class Configuration
     public float groceryOnset;
     public float groceryDuration;
     public float workDuration;
+    public int[] familyTemplate;
+    public float[] familyDistrib;
 
     // TextAsset text = new TextAsset(File.ReadAllText("./Assets/Conf/conf.txt"));
 

@@ -9,11 +9,9 @@ using System;
 
 public struct TemplateInfo
 {
-    public int template1Total;
-    public int template2Total;
-    public int template3Total;
-    public int template4Total;
-    public int template5Total;
+    public int[] templateTotal;
+    public int[] templates;
+    public int[] nComponents;
 }
 
 public struct TileInfo
@@ -51,11 +49,9 @@ public class Human : MonoBehaviour
     public int minDaysFDTretired;
     public int maxDaysFDTretired;
 
-    public int template1Percent;
-    public int template2Percent;
-    public int template3Percent;
-    public int template4Percent;
-    public int template5Percent;
+    public int[] templates;
+    public float[] templateDistrib;
+
     public long totalIntensiveCare;
     private static FamilyGenerator famGenerator;
     private static TemplateInfo templateInfo;
@@ -120,6 +116,8 @@ public class Human : MonoBehaviour
         minDaysFDTretired = conf.minDaysFDTretired;
         maxDaysFDTretired = conf.maxDaysFDTretired;
         remoteWorkerPecent = conf.remoteWorkerPercent / 100f;
+        templates = conf.familyTemplate;
+        templateDistrib = conf.familyDistrib;
         //Time Scale
         Time.timeScale = conf.timeScale; 
 
@@ -146,7 +144,7 @@ public class Human : MonoBehaviour
         //initialize family generator
         famGenerator = new FamilyGenerator();
 
-        templateInfo = FillTemplateData(conf.numberOfHumans);
+        templateInfo = FillTemplateData(conf.numberOfHumans, templates, templateDistrib);
 
         // Get houses and offices from grid
        // List<Vector3Int> housesList = new List<Vector3Int>();
@@ -177,7 +175,7 @@ public class Human : MonoBehaviour
 
                 int hashmapkey = GetPositionHashMapKey(i, j);
                
-                pathFindingMap.Add(hashmapkey, new Pathfinding.PathNode
+                pathFindingMap.Add(hashmapkey, new Pathfinding.PathNode  //adding cells to each quadrant in map
                 {
                     x = i,
                     y = j,
@@ -194,7 +192,7 @@ public class Human : MonoBehaviour
                 int f = 0;
                 string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); 
                 
-                foreach (var floor in tiles)
+                foreach (var floor in tiles) //analysing each floor in every cell and add it to the right hashmap
                 {
 
                     if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Home)
@@ -671,20 +669,26 @@ public class Human : MonoBehaviour
         return (totalH * icu4100k) / 100000f;
     }
 
-    public TemplateInfo FillTemplateData(int totalPopulation)
+    public TemplateInfo FillTemplateData(int totalPopulation, int[] templates, float[] percentages)//computing how many families for each template must be present
     {
 
         TemplateInfo t = new TemplateInfo();
-        float d = (totalPopulation / 4f) * (template1Percent / 100f);
-        t.template1Total = (int)Math.Ceiling(d);
-        d = (totalPopulation / 5f) * (template2Percent / 100f);
-        t.template2Total = (int)Math.Ceiling(d);
-        d = (totalPopulation / 3f) * (template3Percent / 100f);
-        t.template3Total = (int)Math.Ceiling(d);
-        d = (totalPopulation / 2f) * (template4Percent / 100f);
-        t.template4Total = (int)Math.Ceiling(d);
-        d = (totalPopulation / 2f) * (template5Percent / 100f);
-        t.template5Total = (int)Math.Ceiling(d);
+        t.templateTotal = new int[templates.Length];
+        for(int i = 0; i < templates.Length; i++)
+        {
+            int n = templates[i];
+            int j = 0;
+            do
+            {
+                n = n / 10;
+                j++;
+            }
+            while (Math.Abs(n) >= 1);
+            float d = (totalPopulation / j) * (percentages[i] / 100f);
+            t.templateTotal[i] = (int)Math.Ceiling(d);
+            t.nComponents[i] = j;
+        }
+
 
         return t;
     }
