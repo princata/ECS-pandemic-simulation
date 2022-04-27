@@ -65,6 +65,7 @@ public class CounterSystem : SystemBase
         conf = Configuration.CreateFromJSON();
         m_EndSimulationEcbSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
         appendLog = Convert.ToInt32(conf.appendLog);
+        maxDoses = conf.maxDoses;
         infectedCounter = conf.numberOfInfects;
         infectedVAXCounter = 0;
         symptomaticCounter = 0;
@@ -116,7 +117,7 @@ public class CounterSystem : SystemBase
 
     protected override void OnStartRunning()
     {
-        maxDoses = conf.maxDoses;
+       
         //totalIntensiveCounter = Human.Instance.totalIntensiveCare;
     }
     protected override void OnUpdate()

@@ -118,6 +118,7 @@ public class Human : MonoBehaviour
         remoteWorkerPecent = conf.remoteWorkerPercent / 100f;
         templates = conf.familyTemplate;
         templateDistrib = conf.familyDistrib;
+        
         //Time Scale
         Time.timeScale = conf.timeScale; 
 
@@ -528,7 +529,7 @@ public class Human : MonoBehaviour
 
                 oldfamily = familykey;
                 numberOfInfects--;
-                Debug.Log($"symptomatic in section: {startKey}");
+               // Debug.Log($"symptomatic in section: {startKey}");
                 //l'età influenza la probabilità di presentare sintomi
 
                 entityManager.SetComponentData(entity, new InfectionComponent
@@ -674,6 +675,8 @@ public class Human : MonoBehaviour
 
         TemplateInfo t = new TemplateInfo();
         t.templateTotal = new int[templates.Length];
+        t.nComponents = new int[templates.Length];
+        t.templates = new int[templates.Length];
         for(int i = 0; i < templates.Length; i++)
         {
             int n = templates[i];
@@ -684,12 +687,11 @@ public class Human : MonoBehaviour
                 j++;
             }
             while (Math.Abs(n) >= 1);
-            float d = (totalPopulation / j) * (percentages[i] / 100f);
+            float d = ((float)totalPopulation / j) * (percentages[i] / 100f);
             t.templateTotal[i] = (int)Math.Ceiling(d);
             t.nComponents[i] = j;
+            t.templates[i] = templates[i];
         }
-
-
         return t;
     }
 

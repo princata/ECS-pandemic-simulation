@@ -46,7 +46,7 @@ public class Counters : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        maxDoses = Human.conf.maxDoses;
+        
         SymptomaticCounterText = SymptomaticText;
         AsymptomaticCounterText = AsymptomaticText;
         SymptomaticVAXCounterText = SymptomaticVAXText;
@@ -70,6 +70,7 @@ public class Counters : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        maxDoses = Human.conf.maxDoses;
         long population = Interlocked.Read(ref CounterSystem.populationCounter);
         long sym = Interlocked.Read(ref CounterSystem.symptomaticCounter);
         long symVAX = Interlocked.Read(ref CounterSystem.symptomaticVAXCounter);
@@ -134,5 +135,7 @@ public class Counters : MonoBehaviour
         
         return ((float) counter / population)*100f;
     }
+
+    
 }
 

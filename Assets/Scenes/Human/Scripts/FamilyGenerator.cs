@@ -124,7 +124,9 @@ public class FamilyGenerator
 
         if (templateInfos.templateTotal[templateCounter] <= 0)//change template when the total nuber of family for the current template are implemented
             templateCounter++;
-
+        if (templateCounter >= templateInfos.templates.Length)//if there are more agents, the cycle start again, adding a family for each type
+            templateCounter = 0;
+        
         if (countMember < templateInfos.nComponents[templateCounter])
         {
 
@@ -160,7 +162,8 @@ public class FamilyGenerator
             countMember++;
         } 
 
-        templateInfos.templateTotal[templateCounter]--;
+        if(templateCounter < templateInfos.templates.Length)
+            templateInfos.templateTotal[templateCounter]--;
         familyCounter++;
         countMember = 0; //start again with another family
   
