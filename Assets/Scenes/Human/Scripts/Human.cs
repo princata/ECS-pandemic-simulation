@@ -62,14 +62,11 @@ public class Human : MonoBehaviour
     [SerializeField] public Material heatmapMaterial;
     [SerializeField] public Material humanSpriteMaterial;
 
-    //public NativeArray<Vector3Int> houses;
-    public NativeArray<int> NeighbourQuadrants;
-    public static NativeMultiHashMap<int, TileInfo> places;
-    public static NativeMultiHashMap<int, Pathfinding.PathNode> pathFindingMap;
-    public static NativeMultiHashMap<int, Vector3Int> housesMap;
+    public static NativeMultiHashMap<int,Vector3Int> places;
+    public static NativeArray<Vector3Int> housesToVisit;
 
-    public const int quadrantYMultiplier = 1000;
-    public float quadrantCellSize;
+
+
     private void Awake()
     {
         Instance = this;
@@ -95,7 +92,6 @@ public class Human : MonoBehaviour
         //Extract configuration from json file
         conf = Configuration.CreateFromJSON();
         int numberOfInfects = conf.numberOfInfects;
-        quadrantCellSize = conf.sectionSize;
         inputAge = conf.inputAge;
         heatmap = conf.heatmap;
         vaccinationPolicy = conf.vaccinationPolicy;
@@ -131,65 +127,30 @@ public class Human : MonoBehaviour
         entityArray = new NativeArray<Entity>(conf.numberOfHumans, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
 
-        NeighbourQuadrants = new NativeArray<int>(8, Allocator.Persistent);
-        NeighbourQuadrants[0] = 1; // right
-        NeighbourQuadrants[1] = 1 + quadrantYMultiplier; //right-up
-        NeighbourQuadrants[2] = quadrantYMultiplier; //up
-        NeighbourQuadrants[3] = quadrantYMultiplier - 1; //left up
-        NeighbourQuadrants[4] = -1; //left
-        NeighbourQuadrants[5] = 0 - (1 + quadrantYMultiplier); //left down
-        NeighbourQuadrants[6] = -quadrantYMultiplier; //down
-        NeighbourQuadrants[7] = 0 - (quadrantYMultiplier - 1); //right down
+        places = new NativeMultiHashMap<int, Vector3Int>(gridWidth * gridHeight, Allocator.Persistent);
         // Get grid size
-       
+
         //initialize family generator
         famGenerator = new FamilyGenerator();
 
         templateInfo = FillTemplateData(conf.numberOfHumans, templates, templateDistrib);
 
         // Get houses and offices from grid
-       // List<Vector3Int> housesList = new List<Vector3Int>();
-     
-        NativeMultiHashMap<int, Vector3Int> officesMap = new NativeMultiHashMap<int, Vector3Int>(gridWidth * gridHeight, Allocator.Temp);
-        NativeMultiHashMap<int, Vector3Int> schoolMap = new NativeMultiHashMap<int, Vector3Int>(gridWidth * gridHeight, Allocator.Temp);
-        housesMap = new NativeMultiHashMap<int, Vector3Int>(gridWidth * gridHeight, Allocator.Persistent);
-        housesMap.Capacity = gridWidth * gridHeight;
-        List<Vector3Int> officesList = new List<Vector3Int>();
-       
+        List<Vector3Int> housesList = new List<Vector3Int>();
+        List<Vector3Int> officesList = new List<Vector3Int>(); 
         List<Vector3Int> schoolsList = new List<Vector3Int>();
         List<Vector3Int> OAhomeList = new List<Vector3Int>();
-        // var mapGrid = Testing.Instance.grid.GetGridByValue((GridNode gn) => { return gn.GetTileType(); });
         var mapGrid = Testing.Instance.grid;
-        places = new NativeMultiHashMap<int, TileInfo>(gridWidth * gridHeight, Allocator.Persistent);
-        places.Capacity = gridWidth * gridHeight;
+      //  places = new NativeArray<TileInfo>(gridWidth * gridHeight, Allocator.Persistent);
         //NativeMultiHashMap<int, TileInfo>.ParallelWriter places2 = places.AsParallelWriter();
 
-        pathFindingMap = new NativeMultiHashMap<int, Pathfinding.PathNode>(gridWidth * gridHeight, Allocator.Persistent);
-        //NativeMultiHashMap<int, Pathfinding.PathNode>.ParallelWriter pathnodehashmap = pathFindingMap.AsParallelWriter();
-        pathFindingMap.Capacity = gridWidth * gridHeight;
+       
      
        
         for (int i = 0; i < gridWidth; i++)
         {
             for (int j = 0; j < gridHeight; j++)
             {
-
-                int hashmapkey = GetPositionHashMapKey(i, j);
-               
-                pathFindingMap.Add(hashmapkey, new Pathfinding.PathNode  //adding cells to each quadrant in map
-                {
-                    x = i,
-                    y = j,
-                    //index = CalculateIndex(i, j, (int)quadrantCellSize),
-
-                    gCost = int.MaxValue,
-
-                    isWalkable = mapGrid.GetGridObject(i, j).IsWalkable(),
-                    cameFromNodeIndex = -1,
-
-                    //pathNodeArray[index] = pathNode
-                }); 
-
                 int f = 0;
                 string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); 
                 
@@ -198,21 +159,15 @@ public class Human : MonoBehaviour
 
                     if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Home)
                     {
-                        housesMap.Add(hashmapkey,new Vector3Int(i, j, f++));
-                                            
+                        housesList.Add(new Vector3Int(i, j, f++));
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Office)
                     {
-                       
-                        officesMap.Add(hashmapkey, new Vector3Int(i,j,f++));
-                      
-                        
+                        officesList.Add(new Vector3Int(i, j, f++));
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.School)
                     {
-                       
-                         schoolMap.Add(hashmapkey, new Vector3Int(i, j, f++));
-                     
+                        schoolsList.Add(new Vector3Int(i, j, f++));
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.OAhome)
                     {
@@ -221,66 +176,65 @@ public class Human : MonoBehaviour
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Pub)
                     {
                         
-                        places.Add(hashmapkey, new TileInfo
+                        places.Add(0,new Vector3Int
                         {
                             x = i,
                             y = j,
-                            floor = f++,
-                            type = TileMapEnum.TileMapSprite.Pub
+                            z = f++,
+                           
                         });
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Park)
                     {
-                        
-                        places.Add(hashmapkey, new TileInfo
+
+                        places.Add(1, new Vector3Int
                         {
                             x = i,
                             y = j,
-                            floor = f++,
-                            type = TileMapEnum.TileMapSprite.Park
+                            z = f++,
                         });
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Supermarket)
                     {
-                       
-                        places.Add(hashmapkey, new TileInfo
+
+                        places.Add(2, new Vector3Int
                         {
                             x = i,
                             y = j,
-                            floor = f++,
-                            type = TileMapEnum.TileMapSprite.Supermarket
+                            z = f++,
+
                         });
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Hospital)
                     {
-                       
-                        places.Add(hashmapkey, new TileInfo
+
+                        places.Add(3, new Vector3Int
                         {
                             x = i,
                             y = j,
-                            floor = f++,
-                            type = TileMapEnum.TileMapSprite.Hospital
+                            z = f++,
+
                         });
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Gym)
                     {
-                        
-                        places.Add(hashmapkey, new TileInfo
+
+                        places.Add(4, new Vector3Int
                         {
                             x = i,
                             y = j,
-                            floor = f++,
-                            type = TileMapEnum.TileMapSprite.Gym
+                            z = f++,
+
                         });
                     }
                 }
             }
         }
-       
-       // NativeArray<Vector3Int> offices = officesList.ToNativeArray<Vector3Int>(Allocator.Temp);
-       // NativeArray<Vector3Int> schools = schoolsList.ToNativeArray<Vector3Int>(Allocator.Temp);
+
+        housesToVisit = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);  //DA USARE NELLO SCRIPT GetNeedPathSystem.cs
+        
         NativeArray<Vector3Int> OAhouses = OAhomeList.ToNativeArray<Vector3Int>(Allocator.Temp);
-        famGenerator.SetHouses(housesMap, OAhouses, numberOfInfects);
+        famGenerator.SetHouses(housesList, OAhouses);
         famGenerator.SetTemplateInfo(templateInfo);
         //houses = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);
         //famGenerator.PrintTemplateDebug();
@@ -302,10 +256,8 @@ public class Human : MonoBehaviour
 
             var homePosition = familyInfo.homePosition;
             var officePosition = Vector3Int.zero;
-            var hashmapkeyHome = GetPositionHashMapKey(homePosition.x, homePosition.y);
             var familykey = familyInfo.familyKey;
          //   Debug.Log($"entity {entity.Index} hmkHome {hashmapkeyHome} sectionkey{familyInfo.sectionKey}");
-            var startKey = hashmapkeyHome;
             //var found = false;
             //var count = 0;
             
@@ -322,44 +274,9 @@ public class Human : MonoBehaviour
             if (age == HumanStatus.Student) // 5-30 age
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-                
-                for (int l = 0; l < NeighbourQuadrants.Length; l++)
-                {
-                    if (schoolMap.ContainsKey(hashmapkeyHome))//this check allows to pick only the valid quadrants in the map
-                    {
-                        NativeMultiHashMap<int, Vector3Int>.Enumerator e = schoolMap.GetValuesForKey(hashmapkeyHome);
-                        while (e.MoveNext())
-                        {
-                            schoolsList.Add(e.Current);
-                        }
-                        e.Dispose();
-                        hashmapkeyHome = startKey;
-                        hashmapkeyHome += NeighbourQuadrants[l];
-                    }
-                    else
-                    {
-                        hashmapkeyHome = startKey;
-                        hashmapkeyHome += NeighbourQuadrants[l];
-                    }
-                }
-                
-
-                if (schoolsList.Count <= 0)
-                {
-                    Debug.LogError($"The map is incorrectly built, no office is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
-                    UnityEditor.EditorApplication.isPlaying = false;
-
-                }
-                else
-                {
-                    if (schoolsList.Count == 1)
-                        officePosition = schoolsList[0];
-                    else
-                        officePosition = schoolsList[UnityEngine.Random.Range(0, schoolsList.Count)];
-                        
-                   schoolsList.Clear();
-                }
-                                  
+                             
+                officePosition = schoolsList[UnityEngine.Random.Range(0, schoolsList.Count)];
+                              
                 symptomsProbability = GenerateNormalRandom(symptomsStudent, 0.1f, 0f, 1f) * 100; //20% symptoms for young people
                 humanDeathProbability = GenerateNormalRandom(ifrStudent, 0.1f, 0.01f, 1f) * 100; //1% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
@@ -373,45 +290,10 @@ public class Human : MonoBehaviour
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
 
-                for (int l = 0; l < NeighbourQuadrants.Length; l++)
-                {
-                    if (officesMap.ContainsKey(hashmapkeyHome))//this check allows to pick only the valid quadrants in the map
-                    {
-                        NativeMultiHashMap<int, Vector3Int>.Enumerator e = officesMap.GetValuesForKey(hashmapkeyHome);
-                        while (e.MoveNext())
-                        {
-                            officesList.Add(e.Current);
-                        }
-                        e.Dispose();
-                        hashmapkeyHome = startKey;
-                        hashmapkeyHome += NeighbourQuadrants[l];
-                    }
-                    else
-                    {
-                        hashmapkeyHome = startKey;
-                        hashmapkeyHome += NeighbourQuadrants[l];
-                    }
-                }
-                if (officesList.Count <= 0)//NON HO TROVATO NULLA 
-                {
-                    Debug.LogError($"The map is incorrectly built, no school is found in a space of {quadrantCellSize}x{quadrantCellSize} times 9. Rebuild your map, otherwise try to increase section size");
-                    UnityEditor.EditorApplication.isPlaying = false;
-
-                }
-                else
-                {
-                    if (officesList.Count == 1)
-                        officePosition = officesList[0];
-                    else
-                        officePosition = officesList[UnityEngine.Random.Range(0, officesList.Count)];
+                officePosition = officesList[UnityEngine.Random.Range(0, officesList.Count)];
                        
-                    officesList.Clear();
-                }
-           
-               // Debug.Log("entity: " + entity.Index + " office pos:" + officePosition.x + " " + officePosition.y);
-                //  }
-                //  else
-                //    officePosition = offices[UnityEngine.Random.Range(0, offices.Length)];
+                   
+            
 
                 symptomsProbability = GenerateNormalRandom(symptomsWorker, 0.1f, 0.25f, 1f) * 100; //30% sintomi
                 humanDeathProbability = GenerateNormalRandom(ifrWorker, 0.1f, 0.01f, 1f) * 100; //3% IFR (INFECTION FATALITY RATE)
@@ -461,7 +343,6 @@ public class Human : MonoBehaviour
                 officePosition = officePosition,
                 age = familyInfo.age,
                 familyKey = familyInfo.familyKey,
-                sectionKey = familyInfo.sectionKey,
                 PROvax = PROvax,
                 need4vax = 0f,
                 firstDoseTime = firstDoseTime,
@@ -627,9 +508,7 @@ public class Human : MonoBehaviour
             });
         }
         // famGenerator.PrintTemplateDebug();
-        schoolMap.Dispose();
-        officesMap.Dispose();
-        //offices.Dispose();
+       // offices.Dispose();
         //schools.Dispose();
         entityArray.Dispose();
         famGenerator.Disposing();
@@ -653,11 +532,8 @@ public class Human : MonoBehaviour
     }
 
     private void OnDestroy()
-    {
-        housesMap.Dispose();
+    { 
         places.Dispose();
-        NeighbourQuadrants.Dispose();
-        pathFindingMap.Dispose();
     }
 
     public float Percent(float total, int percent)
@@ -695,10 +571,10 @@ public class Human : MonoBehaviour
         return t;
     }
 
-    public static int GetPositionHashMapKey(int x, int y)
-    {
-        return (int)(math.floor(x / conf.sectionSize) + (quadrantYMultiplier * math.floor(y / conf.sectionSize)));
-    }
+    //public static int GetPositionHashMapKey(int x, int y)
+    //{
+    //    return (int)(math.floor(x / conf.sectionSize) + (quadrantYMultiplier * math.floor(y / conf.sectionSize)));
+    //}
 
     public static int CalculateIndex(int x, int y, int cellsize)
     {
