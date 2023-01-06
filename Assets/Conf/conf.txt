@@ -11,7 +11,7 @@
    "maxDaysRecovered": 10,
    "minDaysExposed": 2,
    "maxDaysExposed": 12,
-   "map": "extralarge.tmx",
+   "map": "Turin_FullMap2.tmx",
    "lockdown": false,
    "vaccinationPolicy": true,
    "lockGym": false,
