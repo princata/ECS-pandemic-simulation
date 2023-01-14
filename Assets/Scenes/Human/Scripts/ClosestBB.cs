@@ -9,7 +9,7 @@ public static class ClosestBB
     private static int nRows;
     private static int nCol;
 
-    private static void LoadMatrix()
+    public static void LoadMatrix()
     {
         if (backmap != null)
         {
@@ -39,7 +39,7 @@ public static class ClosestBB
         {
             string[] columns = lines[i].Split(',');
 
-            for (int j = i; j < columns.Length; j++)
+            for (int j = 0; j < columns.Length; j++)
             {
                 try
                 {
@@ -83,7 +83,10 @@ public static class ClosestBB
 
     public static int GetClosestBB(int x,int y)
     {
-        LoadMatrix();
+        if(backmap[x,y] < 0)
+        {
+            Debug.LogError($"x = {x} y = {y} closest bb not exist for these parameters");
+        }
 
         if (x <= nRows && y <= nCol && x >= 0 && y >= 0)
             return backmap[x, y];

@@ -1,16 +1,18 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
 public static class NodesBB
 {
-    private static int[,] tab;
+   // private static int[,] tab;
+    public static NativeHashMap<int, int2> tab;
     private static string filePath = "nodes";
 
-    private static void LoadMatrix()
+    public static void LoadMatrix()
     {
-        if (tab != null)
+        if (tab.IsCreated)
         {
             return;
         }
@@ -36,19 +38,17 @@ public static class NodesBB
         for (int i = 0; i < lines.Length; i++)
         {
             string[] columns = lines[i].Split(',');
-
-            for (int j = i; j < columns.Length; j++)
+           
+            try
             {
-                try
-                {
-                    tab[i, j] = int.Parse(columns[j]);
-                }
-                catch
-                {
-                    Debug.LogError("unable to parse element at (" + i + ", " + j + ")! Element equals '" + columns[j] + "'.");
-                    break;
-                }
+                tab.Add(i, new int2(int.Parse(columns[1]), int.Parse(columns[2])));
             }
+            catch
+            {
+                Debug.LogError("unable to parse element at (" + i + ")!");
+                break;
+            }
+            
         }
 
         Debug.Log("Matrix loaded with size " + n);
@@ -56,24 +56,20 @@ public static class NodesBB
 
     private static void InitializeMatrix(int matrixSize)
     {
-        tab = new int[matrixSize, 3];
+        tab = new NativeHashMap<int, int2>(matrixSize, Allocator.Persistent);
 
-        for (int i = 0; i < matrixSize; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                tab[i, j] = -1;
-            }
-        }
     }
 
 
     public static int2 GetXYfromID(int ID)
     {
+        if (!tab.ContainsKey(ID))
+        {
+            Debug.LogError($" id = {ID} not present in file nodes");
+            return -1;
+        }
 
-        LoadMatrix();
-
-        int2 tmp = new int2(tab[ID, 1], tab[ID, 2]);
+        int2 tmp = tab[ID];
 
         if (tmp.x < 0 || tmp.x > 949 || tmp.y < 0 || tmp.y > 941)
         {

@@ -23,11 +23,8 @@ public class Pathfinding : ComponentSystem
 
     protected override void OnUpdate()
     {
-        int gridWidth = Testing.Instance.grid.GetWidth();
-        int gridHeight = Testing.Instance.grid.GetHeight();
-        int2 gridSize = new int2(gridWidth, gridHeight);
+       
 
-        List<SetBufferPathJob> SetBufferPathJobList = new List<SetBufferPathJob>();
         NativeList<JobHandle> jobHandleList = new NativeList<JobHandle>(Allocator.Temp);
 
 
@@ -40,27 +37,28 @@ public class Pathfinding : ComponentSystem
 
             //Get the path node array of the backbone
             NativeArray<int> pathNodeArray = PathMatrix.GetPath(startBBId, endBBId).ToNativeArray<int>(Allocator.TempJob);
-
+           
             SetBufferPathJob SetBufferPathJob = new SetBufferPathJob
             {
                 pathNodeArray = pathNodeArray,
                 startPosition = pathfindingParams.startPosition,
                 endPosition = pathfindingParams.endPosition,
                 entity = entity,
+                pathFollowComponentDataFromEntity = GetComponentDataFromEntity<PathFollow>(),
+                pathPositionBufferFromEntity = GetBufferFromEntity<PathPosition>(),
             };
-            SetBufferPathJobList.Add(SetBufferPathJob);
             jobHandleList.Add(SetBufferPathJob.Schedule());
-
             PostUpdateCommands.RemoveComponent<PathfindingParams>(entity);
+            
         });
+     
+       JobHandle.CompleteAll(jobHandleList);
         
-        JobHandle.CompleteAll(jobHandleList);
+        
        
     }
 
 
-
-    [BurstCompile]
     private struct SetBufferPathJob : IJob
     {
         public int2 startPosition;

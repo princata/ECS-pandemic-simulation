@@ -124,6 +124,12 @@ public class Human : MonoBehaviour
         float tmp = ICUproportion(conf.numberOfHumans, conf.icu4100k); //ICU proportion based on number of ICU per 100k inhabitants
         this.totalIntensiveCare = Mathf.RoundToInt(tmp);
 
+        ClosestBB.LoadMatrix();
+        PathMatrix.LoadMatrix();
+        NodesBB.LoadMatrix();
+        int2 mp = NodesBB.GetXYfromID(6383);
+
+
         entityArray = new NativeArray<Entity>(conf.numberOfHumans, Allocator.Temp);
         entityManager.CreateEntity(entityArchetype, entityArray);
 
@@ -534,6 +540,7 @@ public class Human : MonoBehaviour
     private void OnDestroy()
     { 
         places.Dispose();
+        NodesBB.tab.Dispose();
     }
 
     public float Percent(float total, int percent)
