@@ -33,7 +33,7 @@ public static class ClosestBB
         int n = lines.Length;
         nRows = n;
 
-        InitializeMatrix(n,lines);
+        InitializeMatrix(nRows, lines);
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -43,7 +43,7 @@ public static class ClosestBB
             {
                 try
                 {
-                    backmap[i, j] = int.Parse(columns[j]);
+                    backmap[j, i] = int.Parse(columns[j]);
                 }
                 catch
                 {
@@ -69,11 +69,11 @@ public static class ClosestBB
         }
 
         nCol = maxColumns;
-        backmap = new int[matrixSize, maxColumns];
+        backmap = new int[nCol, nRows];
 
-        for (int i = 0; i < matrixSize; i++)
+        for (int i = 0; i < nCol; i++)
         {
-            for (int j = 0; j < maxColumns; j++)
+            for (int j = 0; j < nRows; j++)
             {
                 backmap[i, j] = -1;
             }
@@ -81,22 +81,28 @@ public static class ClosestBB
 
     }
 
-    public static int GetClosestBB(int x,int y)
+    public static int GetClosestBB(int x, int y)
     {
-        if(backmap[x,y] < 0)
+        if (x < 0 || x > 949 || y < 0 || y > 941)
         {
             Debug.LogError($"x = {x} y = {y} closest bb not exist for these parameters");
-        }
-
-        if (x <= nRows && y <= nCol && x >= 0 && y >= 0)
-            return backmap[x, y];
-        else
-        {
-            Debug.LogError("Wrong coordinates in trying to get closest backbone node!");
             return -1;
         }
+       
 
+        else
+        {
+            if (backmap[x, y] < 0)
+            {
+                Debug.LogError($"x = {x} y = {y} closest bb not exist for these parameters");
+                return -1;
+            }
+            else
+                return backmap[x, y];
+        }
         
+
+
     }
 
 }

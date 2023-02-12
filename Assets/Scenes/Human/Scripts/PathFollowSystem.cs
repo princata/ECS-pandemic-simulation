@@ -29,11 +29,11 @@ public class PathFollowSystem : SystemBase
 
                 float3 targetPosition = new float3(pathPosition.position.x * cellSize + cellSize * 0.5f, pathPosition.position.y * cellSize + cellSize * 0.5f, 0);
                 float3 moveDir = math.normalizesafe(targetPosition - translation.Value);
-                float moveSpeed = 1f;
+                float moveSpeed = 5f;
 
                 translation.Value += moveDir * moveSpeed * deltaTime;
 
-                if (math.distance(translation.Value, targetPosition) < cellSize * .25f)
+                if (math.distance(translation.Value, targetPosition) < cellSize * .50f)
                 {
                     // Next waypoint
                     pathFollow.pathIndex--;

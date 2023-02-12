@@ -156,17 +156,17 @@ public static class PathMatrix
 
         //Enable this to print full path in console
 
-        string debugString = "Returned Path = [";
-        for (int n = 0; n < path.Count; n++)
-        {
-            debugString += path[n];
-            if (n < path.Count - 1)
-            {
-                debugString += ", ";
-            }
-        }
-        debugString += "]";
-        Debug.Log(debugString);
+        //string debugString = "Returned Path = [";
+        //for (int n = 0; n < path.Count; n++)
+        //{
+        //    debugString += path[n];
+        //    if (n < path.Count - 1)
+        //    {
+        //        debugString += ", ";
+        //    }
+        //}
+        //debugString += "]";
+        //Debug.Log(debugString);
 
 
         return path;

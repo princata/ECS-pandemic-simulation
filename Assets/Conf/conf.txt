@@ -1,8 +1,8 @@
 {
    "appendLog": false,
    "heatmap": true,
-   "numberOfHumans" : 100,
-   "numberOfInfects" : 20,
+   "numberOfHumans" : 100000,
+   "numberOfInfects" : 50,
    "timeScale" : 40,
    "sectionSize": 0,
    "minDaysInfectious": 4,

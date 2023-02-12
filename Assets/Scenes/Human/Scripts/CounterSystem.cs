@@ -44,7 +44,7 @@ public class CounterSystem : SystemBase
     public static long totDeathStudent;
 
     public static long populationCounter;
-    
+
     public static long[] dosesCounter;
 
     public static long totalIntensiveCounter;
@@ -83,7 +83,7 @@ public class CounterSystem : SystemBase
         intensiveNOVAXCounter = 0;
         intensiveVAXCounter = 0;
         totalIntensiveCounter = 0;
-      
+
         totInfectedRetired = 0;
         totInfectedWorker = 0;
         totInfectedStudent = 0;
@@ -101,9 +101,9 @@ public class CounterSystem : SystemBase
             var columns = "ChangePolicies\tPopulation\tExposed\tExposedVAX\tTotalExposed\tSymptomatic\tSymptomaticVAX\tAsymptomatic\tAsymptomaticVAX\t" +
                 "TotInfectedRetired\tTotInfectedWorker\tTotInfectedStudent\tDeath\tDeathVAX\tTotDeathRetired\tTotDeathWorker\tTotDeathStudent\tRecovered\tRecoveredVAX\tTotalRecovered\t" +
                 "IntensiveCare\tIntensiveCareVAX\tTotalIntensive\tTotIntensiveRetired\tTotIntensiveWorker\tTotIntensiveStudent\t";
-            for(int s = 1; s<= maxDoses; s++)
+            for (int s = 1; s <= maxDoses; s++)
             {
-                columns = columns + s.ToString() + "Doses\t"; 
+                columns = columns + s.ToString() + "Doses\t";
             }
             columns += "MinutesPassed";
             writer.WriteLine(columns);
@@ -112,12 +112,12 @@ public class CounterSystem : SystemBase
         }
         else
             startAppend = false; //che diventa true appena faccio load
-        
+
     }
 
     protected override void OnStartRunning()
     {
-       
+
         //totalIntensiveCounter = Human.Instance.totalIntensiveCare;
     }
     protected override void OnUpdate()
@@ -126,7 +126,7 @@ public class CounterSystem : SystemBase
         var vaccinationPolicy = Human.Instance.vaccinationPolicy;
         var maxDose = maxDoses;
         //if(totalIntensiveCounter > Human.Instance.totalIntensiveCare)
-         //   totalIntensiveCounter = Human.Instance.totalIntensiveCare;
+        //   totalIntensiveCounter = Human.Instance.totalIntensiveCare;
 
         NativeArray<long> localInfectedCounter = new NativeArray<long>(1, Allocator.TempJob);
         localInfectedCounter[0] = 0;
@@ -185,7 +185,7 @@ public class CounterSystem : SystemBase
         localTotalRecoveredCounter[0] = 0;
 
         NativeArray<long> localDosesCounter = new NativeArray<long>(maxDose, Allocator.TempJob);
-        for(int i=0;i<maxDose;i++)
+        for (int i = 0; i < maxDose; i++)
             localDosesCounter[i] = 0;
 
         NativeArray<long> localIntensiveVAXCounter = new NativeArray<long>(1, Allocator.TempJob);
@@ -198,20 +198,20 @@ public class CounterSystem : SystemBase
         localTotalIntensiveCounter[0] = 0;
 
         NativeArray<long> localTotIntRetired = new NativeArray<long>(1, Allocator.TempJob);
-        localTotIntRetired[0] = 0;  
-                                    
+        localTotIntRetired[0] = 0;
+
         NativeArray<long> localTotIntWorker = new NativeArray<long>(1, Allocator.TempJob);
-        localTotIntWorker[0] = 0;   
-                                    
+        localTotIntWorker[0] = 0;
+
         NativeArray<long> localTotIntStudent = new NativeArray<long>(1, Allocator.TempJob);
         localTotIntStudent[0] = 0;
 
         var JobHandle1 = Entities.ForEach((Entity entity, int nativeThreadIndex, ref HumanComponent humanComponent, ref InfectionComponent ic) =>
         {
-          
+
             if (ic.status == Status.exposed && ic.oldstatus == Status.susceptible)
             {
-                if(humanComponent.PROvax && humanComponent.vaccinations > 0)
+                if (humanComponent.PROvax && humanComponent.vaccinations > 0)
                 {
                     unsafe
                     {
@@ -227,7 +227,7 @@ public class CounterSystem : SystemBase
                         Interlocked.Increment(ref ((long*)localTotalInfectedCounter.GetUnsafePtr())[0]);
                     }
                 }
-                
+
                 ic.oldstatus = Status.exposed;
             }
 
@@ -271,7 +271,7 @@ public class CounterSystem : SystemBase
                                     break;
 
                             }
-                        }                     
+                        }
 
                     }
                     else
@@ -280,7 +280,7 @@ public class CounterSystem : SystemBase
                         {
                             Interlocked.Increment(ref ((long*)localSymptomaticCounter.GetUnsafePtr())[0]);
                         }
-                        if(ic.intensiveCare)
+                        if (ic.intensiveCare)
                         {
                             unsafe
                             {
@@ -315,7 +315,7 @@ public class CounterSystem : SystemBase
                     }
 
                 }
-                else 
+                else
                 {
                     if (humanComponent.PROvax && humanComponent.vaccinations > 0)
                     {
@@ -392,9 +392,9 @@ public class CounterSystem : SystemBase
                             Interlocked.Decrement(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]);
                         }
                         ic.intensiveCare = false;
-                       // Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
+                        // Debug.Log($"morto vax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
                     }
-                    
+
                 }
                 else
                 {
@@ -411,7 +411,7 @@ public class CounterSystem : SystemBase
                             Interlocked.Decrement(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]);
                         }
                         ic.intensiveCare = false;
-                       // Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
+                        // Debug.Log($"morto novax con rnd : {ic.myRndValue} e hdp : {ic.currentHumanDeathProbability} in intensive care");
                     }
                 }
                 //remove entity
@@ -455,7 +455,7 @@ public class CounterSystem : SystemBase
                 {
                     unsafe
                     {
-                       // Interlocked.Decrement(ref ((long*)localInfectedVAXCounter.GetUnsafePtr())[0]);
+                        // Interlocked.Decrement(ref ((long*)localInfectedVAXCounter.GetUnsafePtr())[0]);
                         Interlocked.Increment(ref ((long*)localRecoveredVAXCounter.GetUnsafePtr())[0]);
                         Interlocked.Increment(ref ((long*)localTotalRecoveredCounter.GetUnsafePtr())[0]);
                     }
@@ -464,7 +464,7 @@ public class CounterSystem : SystemBase
                 {
                     unsafe
                     {
-                       // Interlocked.Decrement(ref ((long*)localInfectedCounter.GetUnsafePtr())[0]);
+                        // Interlocked.Decrement(ref ((long*)localInfectedCounter.GetUnsafePtr())[0]);
                         Interlocked.Increment(ref ((long*)localRecoveredCounter.GetUnsafePtr())[0]);
                         Interlocked.Increment(ref ((long*)localTotalRecoveredCounter.GetUnsafePtr())[0]);
                     }
@@ -550,18 +550,18 @@ public class CounterSystem : SystemBase
             //---------INSERIMENTO COUNTERS VACCINI------------
             if (vaccinationPolicy && humanComponent.PROvax && ic.doses < maxDose)
             {
-                for(int j = 1; j<= maxDose; j++)
+                for (int j = 1; j <= maxDose; j++)
                 {
-                    if (humanComponent.vaccinations == j && ic.doses == j-1)
+                    if (humanComponent.vaccinations == j && ic.doses == j - 1)
                     {
                         unsafe
                         {
-                            Interlocked.Increment(ref ((long*)localDosesCounter.GetUnsafePtr())[j-1]);
+                            Interlocked.Increment(ref ((long*)localDosesCounter.GetUnsafePtr())[j - 1]);
                         }
                         ic.doses = j;
                     }
                 }
-                
+
 
             }
 
@@ -572,7 +572,7 @@ public class CounterSystem : SystemBase
         this.Dependency = JobHandle1;
         JobHandle1.Complete();
 
-        
+
 
         unsafe
         {
@@ -606,7 +606,7 @@ public class CounterSystem : SystemBase
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveVAXCounter.GetUnsafePtr())[0]));
             //Interlocked.Add(ref totalIntensiveCounter, -Interlocked.Read(ref ((long*)localIntensiveCounter.GetUnsafePtr())[0]));
         }
-        for(int k = 0; k < maxDose; k++)
+        for (int k = 0; k < maxDose; k++)
         {
             unsafe
             {
@@ -664,14 +664,14 @@ public class CounterSystem : SystemBase
 
             writer.WriteLine((int)Datetime.total_minutes);
 
-            if(appendLog == 1)
+            if (appendLog == 1)
                 appendLog = 0;
         }
 
-        
-        
-        
-            
+
+
+
+
         localInfectedCounter.Dispose();
         localInfectedVAXCounter.Dispose();
         localTotalInfectedCounter.Dispose();

@@ -34,7 +34,7 @@ public class Human : MonoBehaviour
     public float noVaxPercentage;
     public float remoteWorkerPecent;
     public int[] inputAge;
- 
+
     public float symptomsStudent;
     public float ifrStudent;
     public float symptomsWorker;
@@ -62,7 +62,7 @@ public class Human : MonoBehaviour
     [SerializeField] public Material heatmapMaterial;
     [SerializeField] public Material humanSpriteMaterial;
 
-    public static NativeMultiHashMap<int,Vector3Int> places;
+    public static NativeMultiHashMap<int, Vector3Int> places;
     public static NativeArray<Vector3Int> housesToVisit;
 
 
@@ -97,14 +97,14 @@ public class Human : MonoBehaviour
         vaccinationPolicy = conf.vaccinationPolicy;
         randomSocResp = conf.randomSocResp;
         if (!randomSocResp)
-            socialRespons = conf.socialResponsibility/100f;
-        noVaxPercentage = conf.noVaxPercentage/100f;
-        symptomsStudent = conf.symptomsStudent/100f;
-        ifrStudent = conf.ifrStudent/100f;
-        symptomsWorker = conf.symptomsWorker/100f;
-        ifrWorker = conf.ifrWorker/100f;
-        symptomsRetired = conf.symptomsRetired/100f;
-        ifrRetired = conf.ifrRetired/100f;
+            socialRespons = conf.socialResponsibility / 100f;
+        noVaxPercentage = conf.noVaxPercentage / 100f;
+        symptomsStudent = conf.symptomsStudent / 100f;
+        ifrStudent = conf.ifrStudent / 100f;
+        symptomsWorker = conf.symptomsWorker / 100f;
+        ifrWorker = conf.ifrWorker / 100f;
+        symptomsRetired = conf.symptomsRetired / 100f;
+        ifrRetired = conf.ifrRetired / 100f;
         minDaysFDTstudent = conf.minDaysFDTstudent;
         maxDaysFDTstudent = conf.maxDaysFDTstudent;
         minDaysFDTworker = conf.minDaysFDTworker;
@@ -114,9 +114,9 @@ public class Human : MonoBehaviour
         remoteWorkerPecent = conf.remoteWorkerPercent / 100f;
         templates = conf.familyTemplate;
         templateDistrib = conf.familyDistrib;
-        
+
         //Time Scale
-        Time.timeScale = conf.timeScale; 
+        Time.timeScale = conf.timeScale;
 
         int gridWidth = Testing.Instance.grid.GetWidth();
         int gridHeight = Testing.Instance.grid.GetHeight();
@@ -143,23 +143,23 @@ public class Human : MonoBehaviour
 
         // Get houses and offices from grid
         List<Vector3Int> housesList = new List<Vector3Int>();
-        List<Vector3Int> officesList = new List<Vector3Int>(); 
+        List<Vector3Int> officesList = new List<Vector3Int>();
         List<Vector3Int> schoolsList = new List<Vector3Int>();
         List<Vector3Int> OAhomeList = new List<Vector3Int>();
         var mapGrid = Testing.Instance.grid;
-      //  places = new NativeArray<TileInfo>(gridWidth * gridHeight, Allocator.Persistent);
+        //  places = new NativeArray<TileInfo>(gridWidth * gridHeight, Allocator.Persistent);
         //NativeMultiHashMap<int, TileInfo>.ParallelWriter places2 = places.AsParallelWriter();
 
-       
-     
-       
+
+
+
         for (int i = 0; i < gridWidth; i++)
         {
             for (int j = 0; j < gridHeight; j++)
             {
                 int f = 0;
-                string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X"); 
-                
+                string tiles = mapGrid.GetGridObject(i, j).GetTiles().ToString("X");
+
                 foreach (var floor in tiles) //analysing each floor in every cell and add it to the right hashmap
                 {
 
@@ -181,13 +181,13 @@ public class Human : MonoBehaviour
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Pub)
                     {
-                        
-                        places.Add(0,new Vector3Int
+
+                        places.Add(0, new Vector3Int
                         {
                             x = i,
                             y = j,
                             z = f++,
-                           
+
                         });
                     }
                     else if (int.Parse(floor.ToString(), System.Globalization.NumberStyles.HexNumber) == (int)TileMapEnum.TileMapSprite.Park)
@@ -238,7 +238,7 @@ public class Human : MonoBehaviour
         }
 
         housesToVisit = housesList.ToNativeArray<Vector3Int>(Allocator.Persistent);  //DA USARE NELLO SCRIPT GetNeedPathSystem.cs
-        
+
         NativeArray<Vector3Int> OAhouses = OAhomeList.ToNativeArray<Vector3Int>(Allocator.Temp);
         famGenerator.SetHouses(housesList, OAhouses);
         famGenerator.SetTemplateInfo(templateInfo);
@@ -246,7 +246,7 @@ public class Human : MonoBehaviour
         //famGenerator.PrintTemplateDebug();
         float symptomsProbability = 0f;
         float humanDeathProbability = 0f;
-        
+
         float jobEssentiality = 0f;
         float firstDoseTime = 0f;
         bool PROvax = false;
@@ -257,32 +257,32 @@ public class Human : MonoBehaviour
             Entity entity = entityArray[i];
             FamilyInfo familyInfo = famGenerator.GetFamilyAndAgeDetail();
             HumanStatus age = familyInfo.age;
-            
+
             float speed = AgentFeatures.GetSpeedForAgeComfortable(AgentFeatures.GetAgentAge(inputAge), AgentFeatures.GetAgentGender());
 
             var homePosition = familyInfo.homePosition;
             var officePosition = Vector3Int.zero;
             var familykey = familyInfo.familyKey;
-         //   Debug.Log($"entity {entity.Index} hmkHome {hashmapkeyHome} sectionkey{familyInfo.sectionKey}");
+            //   Debug.Log($"entity {entity.Index} hmkHome {hashmapkeyHome} sectionkey{familyInfo.sectionKey}");
             //var found = false;
             //var count = 0;
-            
-            if(randomSocResp)
+
+            if (randomSocResp)
                 socialRespons = GenerateNormalRandom(0.5f, 0.45f, 0f, 0.99f);
 
-            
+
             if (socialRespons > noVaxPercentage) //percentage of NOVAX in the simulation (considered only if vaccinationPolicy is set true)
                 PROvax = true;
             else
                 PROvax = false;
-            
+
 
             if (age == HumanStatus.Student) // 5-30 age
             {
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
-                             
+
                 officePosition = schoolsList[UnityEngine.Random.Range(0, schoolsList.Count)];
-                              
+
                 symptomsProbability = GenerateNormalRandom(symptomsStudent, 0.1f, 0f, 1f) * 100; //20% symptoms for young people
                 humanDeathProbability = GenerateNormalRandom(ifrStudent, 0.1f, 0.01f, 1f) * 100; //1% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
@@ -297,15 +297,15 @@ public class Human : MonoBehaviour
                 UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
 
                 officePosition = officesList[UnityEngine.Random.Range(0, officesList.Count)];
-                       
-                   
-            
+
+
+
 
                 symptomsProbability = GenerateNormalRandom(symptomsWorker, 0.1f, 0.25f, 1f) * 100; //30% sintomi
                 humanDeathProbability = GenerateNormalRandom(ifrWorker, 0.1f, 0.01f, 1f) * 100; //3% IFR (INFECTION FATALITY RATE)
                 if (PROvax)
                     firstDoseTime = UnityEngine.Random.Range(minDaysFDTworker * 25f * 60f, maxDaysFDTworker * 25f * 60f);
-               
+
                 jobEssentiality = GenerateNormalRandom(remoteWorkerPecent, 0.1f, 0f, 1f); //percentuale lavoratori da remoto 30%
 
             }
@@ -318,10 +318,10 @@ public class Human : MonoBehaviour
                     firstDoseTime = UnityEngine.Random.Range(minDaysFDTretired * 25f * 60f, maxDaysFDTretired * 25f * 60f);
 
             }
-          
+
             //Vector3 position = new float3((UnityEngine.Random.Range(0, gridWidth)) * 10f + UnityEngine.Random.Range(0, 10f), (UnityEngine.Random.Range(0, gridHeight)) * 10f + UnityEngine.Random.Range(0, 10f), 0);
 
-            Vector3 position = new float3(homePosition.x * 10f + UnityEngine.Random.Range(0, 10f), homePosition.y * 10f + UnityEngine.Random.Range(0, 10f), 0);
+            Vector3 position = new float3(homePosition.x * 10f, homePosition.y * 10f, 0);
 
             //Vector3 position = new float3(homePosition.x *10f , homePosition.y * 10f, 0);
 
@@ -334,7 +334,7 @@ public class Human : MonoBehaviour
 
             //To add a buffer to an entity, you can use the normal methods of adding a component type onto an entity:
             entityManager.AddBuffer<PathPosition>(entity);
-           // UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
+            // UnityEngine.Random.InitState(System.DateTime.Now.Millisecond);
             //human component
             entityManager.SetComponentData(entity, new HumanComponent
             {
@@ -402,21 +402,21 @@ public class Human : MonoBehaviour
             // }
             recoveredThreshold = GenerateNormalRandom(mean, sigma, conf.minDaysRecovered * 24 * 60, conf.maxDaysRecovered * 24 * 60);
             //AUMENTO IL TEMPO DI RECUPERO IN BASE ALL'ETA', CALCOLANDO LA PERCENTUALE DI RECOVERED E AGGIUNGENDOLA
-           // recoveredThreshold += Percent(recoveredThreshold, (int)age);
+            // recoveredThreshold += Percent(recoveredThreshold, (int)age);
             // Debug.Log(recoveredThreshold + age.ToString());
 
             mean = (conf.minDaysExposed + conf.maxDaysExposed) * 60 * 24 / 2;
             sigma = (conf.maxDaysExposed * 60 * 24 - mean) / 3;
             //TEMPO DI INCUBAZIONE NON INFLUENZATO DALL'ETA'
             exposedThreshold = GenerateNormalRandom(mean, sigma, conf.minDaysExposed * 60 * 24, conf.maxDaysExposed * 60 * 24);
-            exposedThreshold += Percent(exposedThreshold, UnityEngine.Random.Range(-30,10));
+            exposedThreshold += Percent(exposedThreshold, UnityEngine.Random.Range(-30, 10));
 
             if (numberOfInfects > 0 && oldfamily != familykey)
             {
 
                 oldfamily = familykey;
                 numberOfInfects--;
-               // Debug.Log($"symptomatic in section: {startKey}");
+                // Debug.Log($"symptomatic in section: {startKey}");
                 //l'età influenza la probabilità di presentare sintomi
 
                 entityManager.SetComponentData(entity, new InfectionComponent
@@ -454,7 +454,7 @@ public class Human : MonoBehaviour
                 else
                 {
                     spriteSheetAnimationData.uv = new Vector4(1f, 1f, 1f, uvOffsetY);
-                    spriteSheetAnimationData.matrix = Matrix4x4.TRS(position, Quaternion.identity,new Vector3(20f,20f));
+                    spriteSheetAnimationData.matrix = Matrix4x4.TRS(position, Quaternion.identity, new Vector3(20f, 20f));
                 }
 
                 //quadrant
@@ -514,7 +514,7 @@ public class Human : MonoBehaviour
             });
         }
         // famGenerator.PrintTemplateDebug();
-       // offices.Dispose();
+        // offices.Dispose();
         //schools.Dispose();
         entityArray.Dispose();
         famGenerator.Disposing();
@@ -538,7 +538,7 @@ public class Human : MonoBehaviour
     }
 
     private void OnDestroy()
-    { 
+    {
         places.Dispose();
         NodesBB.tab.Dispose();
     }
@@ -560,7 +560,7 @@ public class Human : MonoBehaviour
         t.templateTotal = new int[templates.Length];
         t.nComponents = new int[templates.Length];
         t.templates = new int[templates.Length];
-        for(int i = 0; i < templates.Length; i++)
+        for (int i = 0; i < templates.Length; i++)
         {
             int n = templates[i];
             int j = 0;
@@ -597,7 +597,7 @@ public class Human : MonoBehaviour
         else
             modY = y;
 
-        if(modX >= modY)
+        if (modX >= modY)
         {
             index = modY * (cellsize + 1) + (modX - modY);
         }
